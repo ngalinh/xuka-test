@@ -1,0 +1,9 @@
+{
+  "name": "xuka-congno",
+  "scripts": {
+    "start": "npx serve . -p $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.0.0"
+  }
+}

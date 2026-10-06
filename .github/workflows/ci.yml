@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Validate index.html
+        run: |
+          set -e
+          test -f index.html
+          grep -q '<!DOCTYPE html>' index.html
+          grep -q '</html>' index.html
+          node -e "const s=require('fs').readFileSync('index.html','utf8'); const o=(s.match(/<div/g)||[]).length, c=(s.match(/<\/div>/g)||[]).length; if(!s.includes('class=\"app\"')) throw new Error('missing .app shell'); if(Math.abs(o-c)>0) console.warn('div balance off by',o-c); console.log('index.html OK —', s.length, 'bytes,', o, 'opening divs');"

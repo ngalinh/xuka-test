@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Xuka CK · Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#8a9bf2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Xuka Mobile">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Poppins',system-ui,-apple-system,sans-serif;
+  background:linear-gradient(160deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%) fixed;
+  color:#2a2e3a;font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(120,120,180,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(120,120,180,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* === SCREEN SYSTEM === */
+#app{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;overflow:hidden}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .18s}
+.screen.active{opacity:1;pointer-events:all}
+
+/* === STICKY HEADER === */
+.hdr{
+  position:sticky;top:0;z-index:8;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(255,255,255,0.60),rgba(255,255,255,0.25));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,0.6);
+  padding:54px 16px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.hdr-menu-btn{
+  width:44px;height:44px;border-radius:14px;
+  background:rgba(255,255,255,0.7);box-shadow:0 4px 12px rgba(120,120,180,0.12);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:#2a2e3a;
+}
+.hdr-center{flex:1;text-align:center}
+.hdr-title{font-size:18px;font-weight:700;color:#2a2e3a;letter-spacing:-0.01em}
+.hdr-sub{font-size:11.5px;color:#8a8fa3;font-weight:400}
+.hdr-right{width:44px;display:flex;justify-content:flex-end;flex-shrink:0}
+.hdr-icon-btn{
+  width:38px;height:38px;border-radius:12px;
+  background:rgba(255,255,255,0.7);box-shadow:0 4px 12px rgba(120,120,180,0.12);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:#2a2e3a;
+}
+.avatar-circle{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);
+  color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(150,140,230,0.35);flex-shrink:0;
+}
+
+/* === SCROLLABLE BODY === */
+.scr-body{overflow-y:auto;flex:1;padding:14px 16px;padding-bottom:96px;-webkit-overflow-scrolling:touch}
+
+/* === GLASS CARD === */
+.g-card{
+  background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));
+  border:1px solid rgba(255,255,255,0.70);
+  border-radius:20px;
+  box-shadow:0 8px 22px rgba(120,120,180,0.12);
+  padding:15px 16px;
+}
+
+/* === STATUS PILLS === */
+.pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+
+/* === CHIPS (filter) === */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  display:inline-flex;align-items:center;padding:7px 14px;border-radius:999px;
+  font-size:12.5px;font-weight:500;white-space:nowrap;cursor:pointer;border:none;font-family:inherit;
+  transition:all .15s;
+}
+.chip.active{background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff}
+.chip.inactive{background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);color:#797f90}
+
+/* === KPI CARD === */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.kpi-card{
+  background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));
+  border:1px solid rgba(255,255,255,0.70);border-radius:20px;
+  box-shadow:0 8px 22px rgba(120,120,180,0.12);padding:16px;
+}
+.kpi-label{font-size:11.5px;color:#797f90;font-weight:500;margin-bottom:8px}
+.kpi-value{font-size:21px;font-weight:700;color:#2a2e3a;letter-spacing:-0.01em}
+.kpi-sub{font-size:11.5px;color:#9aa0b2;margin-top:2px}
+
+/* === FAB === */
+.fab{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);
+  box-shadow:0 10px 26px rgba(150,140,230,0.55);
+  position:fixed;bottom:46px;right:16px;z-index:90;
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:#fff;
+}
+.fab-pill{
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);
+  box-shadow:0 10px 26px rgba(150,140,230,0.55);
+  position:fixed;bottom:46px;right:16px;z-index:90;
+  border:none;cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+  padding:0 20px 0 16px;height:52px;border-radius:999px;
+  color:#fff;font-size:14px;font-weight:600;font-family:inherit;
+}
+
+/* === TABS === */
+.tab-bar{display:flex;gap:5px;padding:4px;border-radius:999px;background:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.8);margin-bottom:14px}
+.tab-btn{flex:1;padding:8px 6px;border-radius:999px;border:none;background:transparent;font-size:12px;font-weight:500;color:#797f90;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.tab-btn.active{background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;font-weight:600}
+
+/* === LIST ROW === */
+.list-row{
+  background:linear-gradient(160deg,rgba(255,255,255,0.72),rgba(255,255,255,0.46));
+  border:1px solid rgba(255,255,255,0.72);
+  border-radius:18px;box-shadow:0 6px 18px rgba(120,120,180,0.1);
+  padding:15px 16px;margin-bottom:10px;
+}
+.row-title{font-size:14px;font-weight:600;color:#2a2e3a;margin-bottom:4px}
+.row-meta{font-size:11.5px;color:#797f90;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.row-amount{font-size:16px;font-weight:700;color:#5b6bd6;letter-spacing:-0.02em}
+.mono{font-family:'Courier New',monospace;font-size:11px;color:#9aa0b2}
+
+/* === AVATAR TILE === */
+.av-tile{
+  width:42px;height:42px;border-radius:14px;
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);
+  color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* === DRAWER === */
+#drawer{position:fixed;inset:0;z-index:200;display:none}
+#drawer.open{display:block}
+#drawer-backdrop{position:absolute;inset:0;background:rgba(60,60,95,0.25);backdrop-filter:blur(2px)}
+#drawer-panel{
+  position:absolute;top:0;left:0;bottom:0;width:100%;
+  background:linear-gradient(160deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateX(-100%);transition:transform .25s ease-out;
+}
+#drawer.open #drawer-panel{transform:translateX(0)}
+.drawer-logo{
+  width:52px;height:52px;border-radius:16px;
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;box-shadow:0 6px 16px rgba(150,140,230,0.35);
+}
+.drawer-title{font-size:17px;font-weight:700;color:#2a2e3a;margin-bottom:2px}
+.drawer-sub{font-size:12px;color:#797f90;margin-bottom:24px}
+.drawer-section-lbl{font-size:10px;font-weight:700;color:#aab0c2;text-transform:uppercase;letter-spacing:.1em;padding:14px 12px 6px}
+.drawer-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-radius:14px;border:1px solid transparent;cursor:pointer;
+  font-size:14px;font-weight:500;color:#4a4f5e;margin-bottom:2px;
+  transition:all .15s;
+}
+.drawer-item:hover{background:rgba(255,255,255,0.6)}
+.drawer-item.active{
+  background:rgba(255,255,255,0.88);border-color:rgba(140,150,230,0.35);
+  color:#2a2e3a;font-weight:600;
+  box-shadow:0 4px 12px rgba(120,120,180,0.08);
+}
+.drawer-item svg{flex-shrink:0;color:inherit;opacity:.7}
+.drawer-divider{height:1px;background:rgba(120,120,180,0.1);margin:8px 12px}
+.drawer-match-btn{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border-radius:14px;border:none;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);
+  color:#fff;font-size:14px;font-weight:600;width:100%;margin-top:8px;
+  box-shadow:0 6px 16px rgba(150,140,230,0.4);
+}
+
+/* === FORM OVERLAY === */
+.form-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:linear-gradient(160deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%);
+  overflow-y:auto;display:none;flex-direction:column;
+}
+.form-overlay.open{display:flex}
+.form-body{flex:1;padding:14px 16px;padding-bottom:100px}
+.form-section{
+  background:linear-gradient(160deg,rgba(255,255,255,0.72),rgba(255,255,255,0.46));
+  border:1px solid rgba(255,255,255,0.72);border-radius:18px;
+  box-shadow:0 6px 18px rgba(120,120,180,0.1);padding:16px;margin-bottom:14px;
+}
+.form-label{font-size:12px;font-weight:600;color:#4a4f5e;margin-bottom:6px;display:block}
+.form-input{
+  width:100%;border:1px solid rgba(140,150,230,0.3);
+  background:rgba(255,255,255,0.78);border-radius:14px;
+  padding:13px 14px;font-size:14px;color:#2a2e3a;font-family:inherit;
+  outline:none;transition:border-color .15s;
+}
+.form-input:focus{border-color:rgba(140,150,230,0.7)}
+textarea.form-input{resize:vertical;min-height:80px}
+select.form-input{cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23797f90' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-bottom{
+  position:fixed;bottom:0;left:0;right:0;z-index:10;
+  background:linear-gradient(0deg,rgba(255,255,255,0.85),rgba(255,255,255,0.5));
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid rgba(255,255,255,0.7);
+  padding:14px 16px 30px;display:flex;gap:10px;
+}
+.form-btn-cancel{
+  flex:1;padding:14px;border-radius:14px;border:1px solid rgba(140,150,230,0.3);
+  background:rgba(255,255,255,0.7);color:#4a4f5e;font-size:14px;font-weight:600;
+  cursor:pointer;font-family:inherit;
+}
+.form-btn-save{
+  flex:2;padding:14px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;
+  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 8px 20px rgba(150,140,230,0.35);
+}
+
+/* === MONTH SWITCHER === */
+.month-pill{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);
+  border-radius:999px;padding:8px 6px 8px 14px;margin-bottom:14px;
+}
+.month-btn{
+  width:30px;height:30px;border:none;background:rgba(255,255,255,0.8);border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#5b6072;flex-shrink:0;
+}
+.month-label{flex:1;text-align:center;font-size:14px;font-weight:600;color:#2a2e3a}
+
+/* === CHART AREA === */
+.chart-wrap{
+  background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));
+  border:1px solid rgba(255,255,255,0.70);border-radius:22px;
+  box-shadow:0 8px 22px rgba(120,120,180,0.12);
+  padding:18px;margin-bottom:14px;
+}
+.chart-title{font-size:12.5px;font-weight:600;color:#4a4f5e;margin-bottom:12px}
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:130px;overflow-x:auto;scrollbar-width:none}
+.bar-chart::-webkit-scrollbar{display:none}
+.bar-day{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;flex:1;height:100%;min-width:14px}
+.bar-stack{width:100%;max-width:18px;border-radius:4px 4px 0 0;transition:height .3s}
+.bar-lbl{font-size:8px;color:#9aa0b2;margin-top:2px}
+.donut-wrap{display:flex;align-items:center;gap:24px}
+.donut-canvas{width:120px;height:120px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:6px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#4a4f5e}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* === SEARCH BAR === */
+.search-bar{
+  display:flex;align-items:center;gap:9px;
+  padding:10px 14px;border-radius:14px;
+  background:rgba(255,255,255,0.78);border:1px solid rgba(140,150,230,0.3);
+  margin-bottom:12px;
+}
+.search-bar svg{flex-shrink:0;color:#9aa0b2}
+.search-bar input{border:none;background:transparent;outline:none;font-size:14px;color:#2a2e3a;font-family:inherit;flex:1}
+.search-bar input::placeholder{color:#9aa0b2}
+
+/* === EMPTY STATE === */
+.empty-state{
+  text-align:center;padding:48px 24px;color:#9aa0b2;
+}
+.empty-state svg{margin-bottom:12px;opacity:.4}
+.empty-state p{font-size:14px;font-weight:500}
+
+/* === MATCH OVERLAY === */
+#match-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:linear-gradient(160deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%);
+  overflow-y:auto;display:none;flex-direction:column;
+}
+#match-overlay.open{display:flex}
+
+/* === MAPPING SECTION === */
+.map-row{
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(160deg,rgba(255,255,255,0.72),rgba(255,255,255,0.46));
+  border:1px solid rgba(255,255,255,0.72);border-radius:14px;
+  padding:12px 14px;margin-bottom:8px;
+}
+.map-kh-name{flex:1;font-size:13px;font-weight:600;color:#2a2e3a}
+.map-arrow-ic{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8a9bf2,#b39bea);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.map-sup-name{font-size:12.5px;color:#5b6bd6;font-weight:500}
+
+/* === UPLOAD AREA === */
+.upload-area{
+  border:2px dashed rgba(140,150,230,0.4);border-radius:18px;
+  padding:32px 16px;text-align:center;color:#9aa0b2;
+  background:rgba(255,255,255,0.4);cursor:pointer;
+}
+.upload-area svg{margin:0 auto 10px;display:block;opacity:.5}
+.upload-area p{font-size:13px}
+
+/* Autocomplete dropdown */
+.autocomplete-list{
+  position:absolute;top:100%;left:0;right:0;z-index:99;
+  background:#fff;border:1px solid rgba(140,150,230,0.3);border-radius:12px;
+  box-shadow:0 8px 20px rgba(120,120,180,0.15);max-height:200px;overflow-y:auto;
+  margin-top:4px;
+}
+.autocomplete-item{padding:10px 14px;font-size:13px;cursor:pointer;color:#2a2e3a}
+.autocomplete-item:hover{background:rgba(138,155,242,0.1)}
+.ac-wrap{position:relative}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREENS -->
+  <div class="screen active" id="scr-overview"></div>
+  <div class="screen" id="scr-khDebt"></div>
+  <div class="screen" id="scr-khList"></div>
+  <div class="screen" id="scr-tracking"></div>
+  <div class="screen" id="scr-supDebt"></div>
+  <div class="screen" id="scr-supList"></div>
+  <div class="screen" id="scr-settings"></div>
+
+  <!-- DRAWER -->
+  <div id="drawer">
+    <div id="drawer-backdrop" onclick="closeDrawer()"></div>
+    <div id="drawer-panel">
+      <!-- Drawer header -->
+      <div style="position:sticky;top:0;z-index:8;padding:54px 16px 14px;display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.25));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.6);">
+        <button style="border:none;cursor:pointer;width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,0.7);box-shadow:0 4px 12px rgba(120,120,180,0.12);display:flex;align-items:center;justify-content:center;color:#2a2e3a;font-size:19px;flex-shrink:0" onclick="closeDrawer()">✕</button>
+        <div style="flex:1"><div style="font-size:18px;font-weight:700;letter-spacing:-0.01em">Điều hướng</div></div>
+        <div style="display:flex;align-items:center;gap:7px;padding:6px 8px 6px 14px;border-radius:999px;background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8)"><span style="font-size:11.5px;color:#797f90">Vai trò</span><span style="padding:4px 11px;border-radius:999px;background:rgba(159,229,216,0.42);color:#1f8a7a;font-size:12px;font-weight:600">Sale</span></div>
+      </div>
+      <!-- Drawer body -->
+      <div style="padding:16px;display:flex;flex-direction:column;gap:18px;padding-bottom:40px">
+
+        <!-- Tổng quan standalone -->
+        <div style="background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.70);border-radius:20px;box-shadow:0 8px 22px rgba(120,120,180,0.12);overflow:hidden;cursor:pointer" onclick="navTo('overview');closeDrawer()">
+          <div style="display:flex;align-items:center;gap:13px;padding:15px 16px">
+            <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,#8a9bf2,#b39bea);display:flex;align-items:center;justify-content:center;color:#fff;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div>
+            <span style="flex:1;font-size:15px;font-weight:600">Tổng quan</span>
+            <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#b6bac8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+
+        <!-- Khách hàng group -->
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9aa0b2;padding:0 6px 8px">Khách hàng</div>
+          <div style="background:linear-gradient(160deg,rgba(255,255,255,0.66),rgba(255,255,255,0.40));border:1px solid rgba(255,255,255,0.70);border-radius:20px;box-shadow:0 8px 22px rgba(120,120,180,0.10);overflow:hidden">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('khList');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(159,229,216,0.5);color:#1f8a7a;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.2 6.5-5.2s6.5 1.9 6.5 5.2"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Danh sách KH</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('khDebt');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(125,142,240,0.16);color:#5b6bd6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6.5v11"/><path d="M14.8 9.3c-.6-1-1.8-1.4-3-1.3-1.3.1-2.3.9-2.3 2s.9 1.7 2.6 2 2.7.9 2.7 2.1-1.1 1.9-2.5 1.9c-1.3 0-2.5-.5-3-1.5"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Công nợ KH</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer" onclick="navTo('tracking');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(177,151,230,0.22);color:#8a6fc4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="m9 13 2 2 4-4"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Tracking CK</span>
+              <span style="padding:2px 9px;border-radius:999px;background:linear-gradient(135deg,#f06565,#e85b8a);color:#fff;font-size:11px;font-weight:700" id="tracking-badge"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sup / Checker group -->
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9aa0b2;padding:0 6px 8px">Sup / Checker</div>
+          <div style="background:linear-gradient(160deg,rgba(255,255,255,0.66),rgba(255,255,255,0.40));border:1px solid rgba(255,255,255,0.70);border-radius:20px;box-shadow:0 8px 22px rgba(120,120,180,0.10);overflow:hidden">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('supList');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(125,142,240,0.16);color:#5b6bd6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.2-4.5h15.6L21 9"/><path d="M4.5 9.5V19a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V9.5"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Danh sách Sup/Checker</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer" onclick="navTo('supDebt');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(243,200,90,0.28);color:#9a6a12;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Công nợ Sup/Checker</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cài đặt group -->
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9aa0b2;padding:0 6px 8px">Cài đặt</div>
+          <div style="background:linear-gradient(160deg,rgba(255,255,255,0.66),rgba(255,255,255,0.40));border:1px solid rgba(255,255,255,0.70);border-radius:20px;box-shadow:0 8px 22px rgba(120,120,180,0.10);overflow:hidden">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('settings');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(120,120,180,0.14);color:#5b6072;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Tài khoản</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('settings');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(120,120,180,0.14);color:#5b6072;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 13.5a3.5 3.5 0 0 0 5 .3l2.5-2.5a3.5 3.5 0 0 0-5-5l-1 .9"/><path d="M14.5 10.5a3.5 3.5 0 0 0-5-.3L7 12.7a3.5 3.5 0 0 0 5 5l1-.9"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Mapping KH ↔ Sup</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer" onclick="navTo('settings');closeDrawer()">
+              <div style="width:32px;height:32px;border-radius:9px;background:rgba(120,120,180,0.14);color:#5b6072;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.5l2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 17v-5"/><path d="m9.7 14 2.3-2.3L14.3 14"/></svg></div>
+              <span style="flex:1;font-size:14.5px;font-weight:500">Data Upload</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Match CK + Desktop link -->
+        <div style="display:flex;gap:10px;margin-top:2px">
+          <button style="flex:1;border:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border-radius:16px;background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;font-size:13.5px;font-weight:600;box-shadow:0 8px 18px rgba(150,140,230,0.4)" onclick="openMatchOverlay();closeDrawer()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.7 4.6L18.3 9.3l-4.6 1.7L12 15.6l-1.7-4.6L5.7 9.3l4.6-1.7z"/></svg>Match CK
+          </button>
+        </div>
+        <a href="/index.html" style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:14px;border:1px solid rgba(140,150,230,0.2);background:rgba(255,255,255,0.5);color:#4a4f5e;text-decoration:none;font-size:13.5px;font-weight:500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+          Chuyển sang Desktop
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- KH FORM OVERLAY -->
+  <div class="form-overlay" id="kh-form-overlay">
+    <div class="hdr">
+      <button class="hdr-menu-btn" onclick="closeKhForm()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="hdr-center"><div class="hdr-title">Nhập công nợ KH</div></div>
+      <div class="hdr-right"></div>
+    </div>
+    <div class="form-body">
+      <div class="form-section">
+        <label class="form-label">Ngày</label>
+        <input type="date" class="form-input" id="kh-date">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Nhân viên</label>
+        <select class="form-input" id="kh-nv">
+          <option value="">-- Chọn NV --</option>
+        </select>
+      </div>
+      <div class="form-section">
+        <label class="form-label" style="margin-bottom:10px">Kênh</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="kh-kenh-chips">
+          <button class="chip active" data-val="Kênh CO" onclick="selectKenh(this)">Kênh CO</button>
+          <button class="chip inactive" data-val="Linh Dương" onclick="selectKenh(this)">Linh Dương</button>
+          <button class="chip inactive" data-val="Linh Thảo" onclick="selectKenh(this)">Linh Thảo</button>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Tên KH</label>
+        <div class="ac-wrap">
+          <input type="text" class="form-input" id="kh-name" placeholder="Nhập tên khách hàng..." oninput="khNameAC(this)">
+          <div class="autocomplete-list" id="kh-name-ac" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Công nợ (VNĐ)</label>
+        <input type="number" class="form-input" id="kh-amount" placeholder="0">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Ghi chú</label>
+        <textarea class="form-input" id="kh-note" placeholder="Ghi chú..."></textarea>
+      </div>
+    </div>
+    <div class="form-bottom">
+      <button class="form-btn-cancel" onclick="closeKhForm()">Hủy</button>
+      <button class="form-btn-save" onclick="saveKhForm()">Lưu công nợ</button>
+    </div>
+  </div>
+
+  <!-- SUP FORM OVERLAY -->
+  <div class="form-overlay" id="sup-form-overlay">
+    <div class="hdr">
+      <button class="hdr-menu-btn" onclick="closeSupForm()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="hdr-center"><div class="hdr-title">Nhập công nợ Sup/Checker</div></div>
+      <div class="hdr-right"></div>
+    </div>
+    <div class="form-body">
+      <div class="form-section">
+        <label class="form-label">Ngày</label>
+        <input type="date" class="form-input" id="sup-date">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Nhân viên</label>
+        <select class="form-input" id="sup-nv"><option value="">-- Chọn NV --</option></select>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Loại</label>
+        <select class="form-input" id="sup-type">
+          <option value="Sup">Sup</option>
+          <option value="Checker">Checker</option>
+        </select>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Tên Sup/Checker</label>
+        <div class="ac-wrap">
+          <input type="text" class="form-input" id="sup-name" placeholder="Nhập tên..." oninput="supNameAC(this)">
+          <div class="autocomplete-list" id="sup-name-ac" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Số tiền (VNĐ)</label>
+        <input type="number" class="form-input" id="sup-amount" placeholder="0">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Ghi chú</label>
+        <textarea class="form-input" id="sup-note" placeholder="Ghi chú..."></textarea>
+      </div>
+    </div>
+    <div class="form-bottom">
+      <button class="form-btn-cancel" onclick="closeSupForm()">Hủy</button>
+      <button class="form-btn-save" onclick="saveSupForm()">Lưu</button>
+    </div>
+  </div>
+
+  <!-- TRACKING FORM OVERLAY -->
+  <div class="form-overlay" id="ck-form-overlay">
+    <div class="hdr">
+      <button class="hdr-menu-btn" onclick="closeCKForm()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="hdr-center"><div class="hdr-title">Thêm Bill CK</div></div>
+      <div class="hdr-right"></div>
+    </div>
+    <div class="form-body">
+      <div class="form-section">
+        <label class="form-label">Ngày</label>
+        <input type="date" class="form-input" id="ck-date">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Tên KH</label>
+        <input type="text" class="form-input" id="ck-kh" placeholder="Tên khách hàng...">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Partner (Sup/Checker)</label>
+        <div class="ac-wrap">
+          <input type="text" class="form-input" id="ck-partner" placeholder="Tên partner..." oninput="ckPartnerAC(this)">
+          <div class="autocomplete-list" id="ck-partner-ac" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Số tiền CK (VNĐ)</label>
+        <input type="number" class="form-input" id="ck-amount" placeholder="0">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Link / Ghi chú</label>
+        <input type="text" class="form-input" id="ck-link" placeholder="Link bill hoặc ghi chú...">
+      </div>
+    </div>
+    <div class="form-bottom">
+      <button class="form-btn-cancel" onclick="closeCKForm()">Hủy</button>
+      <button class="form-btn-save" onclick="saveCKForm()">Lưu Bill CK</button>
+    </div>
+  </div>
+
+  <!-- ADD KH CHAR FORM OVERLAY -->
+  <div class="form-overlay" id="khchar-form-overlay">
+    <div class="hdr">
+      <button class="hdr-menu-btn" onclick="closeKhCharForm()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="hdr-center"><div class="hdr-title">Thêm KH</div></div>
+      <div class="hdr-right"></div>
+    </div>
+    <div class="form-body">
+      <div class="form-section">
+        <label class="form-label">Tên KH</label>
+        <input type="text" class="form-input" id="khc-name" placeholder="Tên khách hàng...">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Kênh (channel)</label>
+        <select class="form-input" id="khc-ch">
+          <option value="Kênh CO">Kênh CO</option>
+          <option value="Linh Dương">Linh Dương</option>
+          <option value="Linh Thảo">Linh Thảo</option>
+        </select>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Thời gian TM (phút)</label>
+        <input type="number" class="form-input" id="khc-tm" placeholder="0">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Ghi chú</label>
+        <textarea class="form-input" id="khc-note" placeholder="Ghi chú..."></textarea>
+      </div>
+    </div>
+    <div class="form-bottom">
+      <button class="form-btn-cancel" onclick="closeKhCharForm()">Hủy</button>
+      <button class="form-btn-save" onclick="saveKhCharForm()">Lưu KH</button>
+    </div>
+  </div>
+
+  <!-- ADD PARTNER FORM OVERLAY -->
+  <div class="form-overlay" id="partner-form-overlay">
+    <div class="hdr">
+      <button class="hdr-menu-btn" onclick="closePartnerForm()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="hdr-center"><div class="hdr-title">Thêm Sup/Checker</div></div>
+      <div class="hdr-right"></div>
+    </div>
+    <div class="form-body">
+      <div class="form-section">
+        <label class="form-label">Loại</label>
+        <select class="form-input" id="pt-type">
+          <option value="Sup">Sup</option>
+          <option value="Checker">Checker</option>
+        </select>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Tên</label>
+        <input type="text" class="form-input" id="pt-name" placeholder="Tên Sup/Checker...">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Số tài khoản (STK)</label>
+        <input type="text" class="form-input" id="pt-stk" placeholder="STK ngân hàng...">
+      </div>
+      <div class="form-section">
+        <label class="form-label">Thời gian TM (phút)</label>
+        <input type="number" class="form-input" id="pt-tm" placeholder="0">
+      </div>
+    </div>
+    <div class="form-bottom">
+      <button class="form-btn-cancel" onclick="closePartnerForm()">Hủy</button>
+      <button class="form-btn-save" onclick="savePartnerForm()">Lưu</button>
+    </div>
+  </div>
+
+  <!-- MATCH CK OVERLAY -->
+  <div id="match-overlay">
+    <div class="hdr">
+      <button class="hdr-menu-btn" onclick="closeMatchOverlay()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="hdr-center">
+        <div class="hdr-title">Match CK</div>
+        <div class="hdr-sub" id="match-sub">0 gợi ý chờ duyệt</div>
+      </div>
+      <div class="hdr-right"></div>
+    </div>
+    <div class="scr-body" id="match-body"></div>
+    <div class="form-bottom">
+      <button class="form-btn-save" style="flex:1" onclick="acceptAllMatches()">Chấp nhận tất cả</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// DATA & CONSTANTS
+// ============================================================
+const LS_KEY = 'xuka_cn_v1';
+const LS_VER_KEY = 'xuka_ver';
+const LS_VER = '8';
+
+const STATUS_COLOR = {
+  'Chờ điều phối':  {bg:'rgba(243,200,90,0.22)',  fg:'#9a6a12'},
+  'Đã điều phối':   {bg:'rgba(125,142,240,0.15)', fg:'#5b6bd6'},
+  'CK 1 phần':      {bg:'rgba(159,229,216,0.45)', fg:'#1f8a7a'},
+  'Done':           {bg:'rgba(53,196,122,0.16)',  fg:'#2a9d63'},
+  'CK dư':          {bg:'rgba(177,151,230,0.2)',  fg:'#8a6fc4'},
+  'Cancelled':      {bg:'rgba(120,120,180,0.12)', fg:'#797f90'},
+  'Mới nhập':       {bg:'rgba(120,120,180,0.12)', fg:'#797f90'},
+  'Chờ khách CK':   {bg:'rgba(243,200,90,0.22)',  fg:'#9a6a12'},
+  'Khách đã CK':    {bg:'rgba(125,142,240,0.15)', fg:'#5b6bd6'},
+  'Chờ XN & Đã tham chiếu HT': {bg:'rgba(243,200,90,0.22)', fg:'#9a6a12'},
+  'Đã XN & Nhập file Sup/Checker': {bg:'rgba(125,142,240,0.15)', fg:'#5b6bd6'},
+  'Done & Nhập Thu Chi': {bg:'rgba(53,196,122,0.16)', fg:'#2a9d63'},
+};
+const TYPE_COLOR = {
+  'Sup':     {bg:'rgba(125,142,240,0.15)', fg:'#5b6bd6'},
+  'Checker': {bg:'rgba(177,151,230,0.2)',  fg:'#8a6fc4'},
+};
+const ROLE_COLOR = {
+  'admin': {bg:'rgba(125,142,240,0.15)', fg:'#5b6bd6'},
+  'mh':    {bg:'rgba(177,151,230,0.2)',  fg:'#8a6fc4'},
+  'sale':  {bg:'rgba(159,229,216,0.45)', fg:'#1f8a7a'},
+  'kt':    {bg:'rgba(243,200,90,0.22)',  fg:'#9a6a12'},
+};
+const ROLE_LABELS = {admin:'Admin', mh:'Mua hàng', sale:'Sale/CSKH', kt:'Kế toán'};
+
+const D = {
+  sup: [], kh: [], ck: [], ctr: 1,
+  partners: [
+    {type:'Sup',name:'Nguyễn Văn A',stk:'012345678',tm:30,am:0},
+    {type:'Checker',name:'Trần Thị B',stk:'098765432',tm:15,am:0},
+  ],
+  khChars: [
+    {ch:'Kênh CO',name:'Khách CO 1',tm:20,am:0},
+    {ch:'Linh Dương',name:'KH Linh Dương 1',tm:25,am:0},
+    {ch:'Linh Thảo',name:'KH Linh Thảo 1',tm:20,am:0},
+  ],
+};
+
+let CFG_USERS = [];
+let KH_SUP_MAP = {};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtVND(n){
+  n = Number(n)||0;
+  if(!n) return '0đ';
+  if(n>=1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,'')+ ' tỷ';
+  if(n>=1e6) return Math.round(n/1e6)+' tr';
+  return n.toLocaleString('vi-VN')+'đ';
+}
+function fmtDate(iso){
+  if(!iso) return '';
+  const p=iso.split('-');
+  return p[2]+'/'+p[1];
+}
+function today(){return new Date().toISOString().slice(0,10)}
+function genId(prefix){
+  const d=today().replace(/-/g,'').slice(2);
+  return prefix+d+String(D.ctr++).padStart(2,'0');
+}
+function initials(name){
+  if(!name) return '?';
+  return name.trim().split(/\s+/).map(w=>w[0]||'').slice(-2).join('').toUpperCase()||'?';
+}
+function statusPill(status){
+  const c=STATUS_COLOR[status]||{bg:'rgba(120,120,180,0.12)',fg:'#797f90'};
+  return `<span class="pill" style="background:${c.bg};color:${c.fg}">${status||'—'}</span>`;
+}
+function typePill(type){
+  const c=TYPE_COLOR[type]||{bg:'rgba(120,120,180,0.12)',fg:'#797f90'};
+  return `<span class="pill" style="background:${c.bg};color:${c.fg}">${type||'—'}</span>`;
+}
+function rolePill(role){
+  const c=ROLE_COLOR[role]||{bg:'rgba(120,120,180,0.12)',fg:'#797f90'};
+  return `<span class="pill" style="background:${c.bg};color:${c.fg}">${ROLE_LABELS[role]||role||'—'}</span>`;
+}
+function khChannel(k){
+  return (D.khChars.find(c=>c.name===k.name)||{}).ch || k.ch || '';
+}
+function emptyState(msg){
+  return `<div class="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6M9 12h4"/></svg>
+    <p>${msg}</p>
+  </div>`;
+}
+function icoSvg(path,sz=20){
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
+
+// ============================================================
+// LOCALSTORAGE
+// ============================================================
+function loadData(){
+  try{
+    if(localStorage.getItem(LS_VER_KEY)!==LS_VER) return;
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const p=JSON.parse(raw);
+    D.sup=p.sup||[];
+    D.kh=p.kh||[];
+    D.ck=p.ck||[];
+    D.ctr=p.ctr||1;
+    if(p.partners&&p.partners.length) D.partners=p.partners;
+    if(p.khChars&&p.khChars.length) D.khChars=p.khChars;
+  }catch(e){}
+}
+function saveData(){
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify({
+      sup:D.sup,kh:D.kh,ck:D.ck,ctr:D.ctr,partners:D.partners,khChars:D.khChars
+    }));
+  }catch(e){}
+}
+function loadUsers(){
+  try{
+    const raw=localStorage.getItem('xuka_users');
+    if(raw){const a=JSON.parse(raw);if(Array.isArray(a)&&a.length) return a;}
+  }catch(e){}
+  return [{name:'Linh Dương',user:'ld',email:'ld@xuka.vn',role:'admin',active:true},
+          {name:'Linh Thảo',user:'lt',email:'lt@xuka.vn',role:'sale',active:true}];
+}
+function loadMapping(){
+  try{
+    const raw=localStorage.getItem('xuka_mapping');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {};
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let currentScreen='overview';
+let viewMonth=new Date().getMonth()+1;
+let viewYear=new Date().getFullYear();
+let khFilter='all';
+let supTab='all';
+let ckTab='cho';
+let searchVisible={khDebt:false,khList:false};
+let khSearch='';
+let khListSearch='';
+let selectedKenh='Kênh CO';
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const SCREENS = ['overview','khDebt','khList','tracking','supDebt','supList','settings'];
+
+function navTo(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('scr-'+screen).classList.add('active');
+  currentScreen=screen;
+  // drawer items
+  document.querySelectorAll('.drawer-item').forEach(el=>el.classList.remove('active'));
+  const di=document.getElementById('di-'+screen);
+  if(di) di.classList.add('active');
+  closeDrawer();
+  renderScreen(screen);
+}
+
+function renderScreen(screen){
+  switch(screen){
+    case 'overview': renderOverview(); break;
+    case 'khDebt': renderKhDebt(); break;
+    case 'khList': renderKhList(); break;
+    case 'tracking': renderTracking(); break;
+    case 'supDebt': renderSupDebt(); break;
+    case 'supList': renderSupList(); break;
+    case 'settings': renderSettings(); break;
+  }
+}
+
+// ============================================================
+// DRAWER
+// ============================================================
+function openDrawer(){document.getElementById('drawer').classList.add('open')}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open')}
+
+// ============================================================
+// SVG ICONS
+// ============================================================
+const ICO_MENU='<path d="M3 6h18M3 12h18M3 18h18"/>';
+const ICO_SEARCH='<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>';
+const ICO_PLUS='<path d="M12 5v14M5 12h14"/>';
+const ICO_LEFT='<path d="M15 18l-6-6 6-6"/>';
+const ICO_RIGHT='<path d="M9 18l6-6-6-6"/>';
+const ICO_ARROW='<path d="M5 12h14M13 6l6 6-6 6"/>';
+
+// ============================================================
+// SCREEN BUILDERS — shared header
+// ============================================================
+function buildHdr(opts){
+  // opts: {left:'menu'|'close', title, sub, right:'search'|'avatar'|null, rightAction}
+  const leftBtn = opts.left==='menu'
+    ? `<button class="hdr-menu-btn" onclick="openDrawer()">${icoSvg(ICO_MENU)}</button>`
+    : `<button class="hdr-menu-btn" onclick="${opts.closeAction||''}">${icoSvg('<path d="M18 6L6 18M6 6l12 12"/>')}</button>`;
+
+  let rightEl='<div class="hdr-right"></div>';
+  if(opts.right==='search'){
+    rightEl=`<div class="hdr-right"><button class="hdr-icon-btn" onclick="${opts.rightAction||''}">${icoSvg(ICO_SEARCH,18)}</button></div>`;
+  } else if(opts.right==='avatar'){
+    const u=CFG_USERS[0]||{name:'LD'};
+    rightEl=`<div class="hdr-right"><div class="avatar-circle">${initials(u.name)}</div></div>`;
+  }
+  return `<div class="hdr">
+    ${leftBtn}
+    <div class="hdr-center">
+      <div class="hdr-title">${opts.title}</div>
+      ${opts.sub?`<div class="hdr-sub">${opts.sub}</div>`:''}
+    </div>
+    ${rightEl}
+  </div>`;
+}
+
+// ============================================================
+// SCREEN 1: TỔNG QUAN
+// ============================================================
+function renderOverview(){
+  const el=document.getElementById('scr-overview');
+  const MONTHS=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+  const monthLabel=MONTHS[viewMonth-1]+' '+viewYear;
+
+  // KPIs
+  const khMonth=D.kh.filter(k=>{
+    if(!k.date) return false;
+    const [y,m]=k.date.split('-').map(Number);
+    return y===viewYear&&m===viewMonth&&k.status!=='Cancelled';
+  });
+  const totalCK=khMonth.reduce((s,k)=>s+(Number(k.amount)||0),0);
+  const countGD=khMonth.length;
+  const supCDP=D.sup.filter(s=>s.status==='Chờ điều phối');
+  const supCDPAmt=supCDP.reduce((s,x)=>s+(Number(x.amount)||0),0);
+  const supDone=D.sup.filter(s=>s.status==='Done').length;
+  const supTotal=D.sup.length;
+
+  // Bar chart data (by day in month, up to 14 bars visible)
+  const daysInMonth=new Date(viewYear,viewMonth,0).getDate();
+  const barDays=Math.min(daysInMonth,14);
+  const supByDay=Array(daysInMonth+1).fill(0);
+  const ckByDay=Array(daysInMonth+1).fill(0);
+  D.sup.forEach(s=>{
+    if(!s.date) return;
+    const [y,m,d]=s.date.split('-').map(Number);
+    if(y===viewYear&&m===viewMonth) supByDay[d]=(supByDay[d]||0)+(Number(s.amount)||0);
+  });
+  D.ck.forEach(c=>{
+    if(!c.date) return;
+    const [y,m,d]=c.date.split('-').map(Number);
+    if(y===viewYear&&m===viewMonth) ckByDay[d]=(ckByDay[d]||0)+(Number(c.amount)||0);
+  });
+  const maxBar=Math.max(...supByDay.slice(1,barDays+1).map((v,i)=>v+ckByDay[i+1]),1);
+  let bars='';
+  for(let day=1;day<=barDays;day++){
+    const sv=supByDay[day]||0;
+    const cv=ckByDay[day]||0;
+    const sh=Math.max(2,Math.round((sv/maxBar)*110));
+    const ckh=Math.max(0,Math.round((cv/maxBar)*30));
+    bars+=`<div class="bar-day">
+      ${ckh>0?`<div class="bar-stack" style="height:${ckh}px;background:linear-gradient(180deg,#b39bea,#9b8ee8)"></div>`:''}
+      <div class="bar-stack" style="height:${sh}px;background:linear-gradient(180deg,#7d8ef0,#5b6bd6)"></div>
+      <div class="bar-lbl">${day}</div>
+    </div>`;
+  }
+
+  // Donut data
+  const supTotal2=D.sup.filter(s=>{const[y,m]=((s.date||'').split('-')).map(Number);return y===viewYear&&m===viewMonth}).reduce((a,s)=>a+(Number(s.amount)||0),0);
+  const ckTotal2=D.ck.filter(c=>{const[y,m]=((c.date||'').split('-')).map(Number);return y===viewYear&&m===viewMonth}).reduce((a,c)=>a+(Number(c.amount)||0),0);
+  const grandTotal=supTotal2+ckTotal2||1;
+  const supPct=Math.round(supTotal2/grandTotal*100);
+  const ckPct=100-supPct;
+  const donutBg=`conic-gradient(#5b6bd6 0% ${supPct}%, #9b8ee8 ${supPct}% 100%)`;
+  const countLabel=countGD;
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Tổng quan',sub:'Dòng tiền CK 3 bên',right:'avatar'})}
+    <div class="scr-body">
+      <div class="month-pill">
+        <button class="month-btn" onclick="changeMonth(-1)">◀</button>
+        <span class="month-label">${monthLabel}</span>
+        <button class="month-btn" onclick="changeMonth(1)">▶</button>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Tổng đã CK</div>
+          <div class="kpi-value">${fmtVND(totalCK)}</div>
+          <div style="font-size:11.5px;font-weight:600;color:#2a9d63;margin-top:2px">${countGD} giao dịch</div>
+          <div style="height:6px;border-radius:999px;background:rgba(120,120,180,0.12);margin-top:10px;overflow:hidden"><div style="width:72%;height:100%;background:linear-gradient(90deg,#8a9bf2,#a99bea)"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Số giao dịch</div>
+          <div class="kpi-value">${countGD}</div>
+          <div style="font-size:11.5px;font-weight:600;color:#2a9d63;margin-top:2px">trong tháng</div>
+          <div style="height:6px;border-radius:999px;background:rgba(120,120,180,0.12);margin-top:10px;overflow:hidden"><div style="width:58%;height:100%;background:linear-gradient(90deg,#9fe5d8,#8fc8d8)"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Chờ điều phối</div>
+          <div class="kpi-value">${fmtVND(supCDPAmt)}</div>
+          <div style="font-size:11.5px;font-weight:600;color:#b5852a;margin-top:2px">${supCDP.length} GD</div>
+          <div style="height:6px;border-radius:999px;background:rgba(120,120,180,0.12);margin-top:10px;overflow:hidden"><div style="width:34%;height:100%;background:linear-gradient(90deg,#f3e07c,#f0d06a)"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Đã Done</div>
+          <div class="kpi-value">${supDone} <span style="font-size:12.5px;font-weight:600;color:#797f90">/ ${supTotal}</span></div>
+          <div style="font-size:11.5px;font-weight:600;color:#2a9d63;margin-top:2px">${supTotal>0?Math.round(supDone/supTotal*100):0}%</div>
+          <div style="height:6px;border-radius:999px;background:rgba(120,120,180,0.12);margin-top:10px;overflow:hidden"><div style="width:${supTotal>0?Math.round(supDone/supTotal*100):0}%;height:100%;background:linear-gradient(90deg,#6f9cf2,#9f9ce8)"></div></div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <span style="font-size:14px;font-weight:600">Số tiền CK theo ngày</span>
+          <div style="display:flex;gap:12px;font-size:11px;color:#5b6072">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:3px;background:#5b6bd6;display:inline-block"></span>Sup</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:3px;background:#9b8ee8;display:inline-block"></span>Checker</span>
+          </div>
+        </div>
+        <div class="bar-chart">${bars||'<div style="color:#9aa0b2;font-size:12px;padding:10px">Chưa có dữ liệu</div>'}</div>
+      </div>
+      <div class="chart-wrap">
+        <span style="font-size:14px;font-weight:600">Tỷ trọng Sup / Checker</span>
+        <div class="donut-wrap" style="margin-top:14px">
+          <div class="donut-canvas" style="background:${donutBg}">
+            <div style="width:78px;height:78px;border-radius:50%;background:rgba(255,255,255,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <span style="font-size:22px;font-weight:700;line-height:1">${countLabel}</span>
+              <span style="font-size:10px;color:#8a8fa3">giao dịch</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:#5b6bd6;display:inline-block"></span><span style="font-size:13px;color:#4a4f5e">Sup</span></div>
+              <div style="font-size:18px;font-weight:700;margin-left:18px">${supPct}%</div>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:#9b8ee8;display:inline-block"></span><span style="font-size:13px;color:#4a4f5e">Checker</span></div>
+              <div style="font-size:18px;font-weight:700;margin-left:18px">${ckPct}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function changeMonth(delta){
+  viewMonth+=delta;
+  if(viewMonth>12){viewMonth=1;viewYear++;}
+  if(viewMonth<1){viewMonth=12;viewYear--;}
+  renderOverview();
+}
+
+// ============================================================
+// SCREEN 2: CÔNG NỢ KH
+// ============================================================
+function renderKhDebt(){
+  const el=document.getElementById('scr-khDebt');
+  const FILTERS=['all','Linh Dương','Linh Thảo','Kênh CO'];
+  const FLABELS={'all':'Tất cả','Linh Dương':'Linh Dương','Linh Thảo':'Linh Thảo','Kênh CO':'Kênh CO'};
+
+  let rows=[...D.kh].reverse();
+  if(khFilter!=='all') rows=rows.filter(k=>khChannel(k)===khFilter);
+  if(khSearch) rows=rows.filter(k=>(k.name||'').toLowerCase().includes(khSearch.toLowerCase()));
+
+  const chips=FILTERS.map(f=>`<button class="chip ${khFilter===f?'active':'inactive'}" onclick="setKhFilter('${f}')">${FLABELS[f]}</button>`).join('');
+
+  const list=rows.length?rows.map(k=>{
+    const ch=khChannel(k);
+    const chColor=ch==='Linh Dương'?'rgba(125,142,240,0.15)':ch==='Linh Thảo'?'rgba(177,151,230,0.2)':'rgba(159,229,216,0.4)';
+    const chFg=ch==='Linh Dương'?'#5b6bd6':ch==='Linh Thảo'?'#8a6fc4':'#1f8a7a';
+    return `<div class="list-row">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+        <div style="flex:1">
+          <div style="font-size:14.5px;font-weight:600;">${k.name||'—'}</div>
+          <div style="font-size:11.5px;color:#9aa0b2;margin-top:1px">${k.nv||''}</div>
+        </div>
+        ${statusPill(k.status||'Mới nhập')}
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${ch?`<span class="pill" style="background:${chColor};color:${chFg};font-size:10.5px;padding:3px 9px;width:max-content">${ch}</span>`:''}
+          <span style="font-size:11px;color:#797f90">${fmtDate(k.date)}${k.note?' · '+k.note:''}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:17px;font-weight:700;letter-spacing:-0.01em">${fmtVND(k.amount)}</div>
+          ${k.idCK?`<div class="mono">${k.idCK}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join(''):emptyState('Chưa có dữ liệu công nợ KH');
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Công nợ KH',right:'search',rightAction:'toggleKhSearch()'})}
+    <div class="scr-body">
+      <div id="kh-search-bar" style="${searchVisible.khDebt?'':'display:none'}">
+        <div class="search-bar">
+          ${icoSvg(ICO_SEARCH,16)}
+          <input type="text" placeholder="Tìm khách hàng..." value="${khSearch}" oninput="khSearchInput(this)">
+        </div>
+      </div>
+      <div class="chips" style="margin-bottom:12px">${chips}</div>
+      ${list}
+    </div>
+    <button class="fab" onclick="openKhForm()">${icoSvg(ICO_PLUS,24)}</button>`;
+}
+
+function setKhFilter(f){khFilter=f;renderKhDebt()}
+function toggleKhSearch(){
+  searchVisible.khDebt=!searchVisible.khDebt;
+  renderKhDebt();
+  if(searchVisible.khDebt) setTimeout(()=>document.querySelector('#kh-search-bar input')?.focus(),50);
+}
+function khSearchInput(el){khSearch=el.value;renderKhDebt()}
+
+// ============================================================
+// SCREEN 3: KH FORM
+// ============================================================
+function openKhForm(){
+  document.getElementById('kh-date').value=today();
+  // populate NV
+  const sel=document.getElementById('kh-nv');
+  sel.innerHTML='<option value="">-- Chọn NV --</option>';
+  CFG_USERS.filter(u=>['sale','admin'].includes(u.role)&&u.active!==false).forEach(u=>{
+    sel.innerHTML+=`<option value="${u.name}">${u.name}</option>`;
+  });
+  document.getElementById('kh-name').value='';
+  document.getElementById('kh-amount').value='';
+  document.getElementById('kh-note').value='';
+  selectedKenh='Kênh CO';
+  document.querySelectorAll('#kh-kenh-chips .chip').forEach(c=>{
+    c.className='chip '+(c.dataset.val===selectedKenh?'active':'inactive');
+  });
+  document.getElementById('kh-form-overlay').classList.add('open');
+}
+function closeKhForm(){document.getElementById('kh-form-overlay').classList.remove('open')}
+function selectKenh(btn){
+  selectedKenh=btn.dataset.val;
+  document.querySelectorAll('#kh-kenh-chips .chip').forEach(c=>{
+    c.className='chip '+(c.dataset.val===selectedKenh?'active':'inactive');
+  });
+}
+function khNameAC(input){
+  const q=input.value.toLowerCase();
+  const ac=document.getElementById('kh-name-ac');
+  if(!q){ac.style.display='none';return;}
+  const matches=D.khChars.filter(c=>c.name.toLowerCase().includes(q)).slice(0,6);
+  if(!matches.length){ac.style.display='none';return;}
+  ac.innerHTML=matches.map(c=>`<div class="autocomplete-item" onclick="selectKhName('${c.name.replace(/'/g,"\\'")}', this.closest('.autocomplete-list'))">${c.name} <span style="color:#9aa0b2;font-size:11px">${c.ch}</span></div>`).join('');
+  ac.style.display='block';
+}
+function selectKhName(name, ac){
+  document.getElementById('kh-name').value=name;
+  ac.style.display='none';
+}
+function saveKhForm(){
+  const date=document.getElementById('kh-date').value||today();
+  const nv=document.getElementById('kh-nv').value;
+  const name=document.getElementById('kh-name').value.trim();
+  const amount=Number(document.getElementById('kh-amount').value)||0;
+  const note=document.getElementById('kh-note').value.trim();
+  if(!name){alert('Vui lòng nhập tên KH');return;}
+  const id=genId('KH');
+  D.kh.push({_id:id,date,nv,name,amount,origAmount:amount,status:'Mới nhập',idCK:'',stk:'',cdAm:0,note});
+  saveData();
+  closeKhForm();
+  renderKhDebt();
+}
+
+// ============================================================
+// SCREEN 4: DANH SÁCH KH
+// ============================================================
+function renderKhList(){
+  const el=document.getElementById('scr-khList');
+  let rows=[...D.khChars];
+  if(khListSearch) rows=rows.filter(c=>c.name.toLowerCase().includes(khListSearch.toLowerCase()));
+
+  const list=rows.length?rows.map(c=>{
+    const chColor=c.ch==='Linh Dương'?'rgba(125,142,240,0.15)':c.ch==='Linh Thảo'?'rgba(177,151,230,0.2)':'rgba(159,229,216,0.4)';
+    const chFg=c.ch==='Linh Dương'?'#5b6bd6':c.ch==='Linh Thảo'?'#8a6fc4':'#1f8a7a';
+    return `<div style="display:flex;align-items:center;gap:13px;background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.72);border-radius:16px;box-shadow:0 5px 14px rgba(120,120,180,0.08);padding:13px 15px;margin-bottom:10px">
+      <div style="width:42px;height:42px;border-radius:13px;background:linear-gradient(150deg,#9fe5d8,#b39bea);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex:none">${initials(c.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600">${c.name}</div>
+        <div style="font-size:11.5px;color:#9aa0b2;margin-top:1px">${c.tm?`TM: ${c.tm} phút`:''}</div>
+      </div>
+      <div style="text-align:right">
+        <span style="padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:600;background:${chColor};color:${chFg}">${c.ch||''}</span>
+      </div>
+    </div>`;
+  }).join(''):emptyState('Chưa có danh sách KH');
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Danh sách KH',right:'search',rightAction:'toggleKhListSearch()'})}
+    <div class="scr-body">
+      <div id="khlist-search-bar" style="${searchVisible.khList?'':'display:none'}">
+        <div class="search-bar">
+          ${icoSvg(ICO_SEARCH,16)}
+          <input type="text" placeholder="Tìm KH..." value="${khListSearch}" oninput="khListSearchInput(this)">
+        </div>
+      </div>
+      ${list}
+    </div>
+    <button class="fab" onclick="openKhCharForm()">${icoSvg(ICO_PLUS,24)}</button>`;
+}
+
+function toggleKhListSearch(){
+  searchVisible.khList=!searchVisible.khList;
+  renderKhList();
+  if(searchVisible.khList) setTimeout(()=>document.querySelector('#khlist-search-bar input')?.focus(),50);
+}
+function khListSearchInput(el){khListSearch=el.value;renderKhList()}
+
+// ============================================================
+// KH CHAR FORM
+// ============================================================
+function openKhCharForm(){
+  document.getElementById('khc-name').value='';
+  document.getElementById('khc-tm').value='';
+  document.getElementById('khc-note').value='';
+  document.getElementById('khchar-form-overlay').classList.add('open');
+}
+function closeKhCharForm(){document.getElementById('khchar-form-overlay').classList.remove('open')}
+function saveKhCharForm(){
+  const name=document.getElementById('khc-name').value.trim();
+  const ch=document.getElementById('khc-ch').value;
+  const tm=Number(document.getElementById('khc-tm').value)||0;
+  const note=document.getElementById('khc-note').value.trim();
+  if(!name){alert('Vui lòng nhập tên KH');return;}
+  D.khChars.push({ch,name,tm,am:0,note});
+  saveData();
+  closeKhCharForm();
+  renderKhList();
+}
+
+// ============================================================
+// SCREEN 5: TRACKING CK
+// ============================================================
+function renderTracking(){
+  const el=document.getElementById('scr-tracking');
+  const TABS=[
+    {id:'cho',label:'Chờ XN',filter:r=>r.status&&r.status.includes('Chờ XN')},
+    {id:'da',label:'Đã XN',filter:r=>r.status&&r.status.includes('Đã XN')},
+    {id:'done',label:'Done',filter:r=>r.status&&r.status.includes('Done')},
+  ];
+  const cur=TABS.find(t=>t.id===ckTab)||TABS[0];
+  const rows=D.ck.filter(cur.filter);
+  const tabs=TABS.map(t=>`<button class="tab-btn ${ckTab===t.id?'active':''}" onclick="setCKTab('${t.id}')">${t.label}</button>`).join('');
+
+  const list=rows.length?rows.map(r=>`<div class="list-row">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:14px;font-weight:600">${r.kh||'—'}</div>
+        ${r.idCK?`<div class="mono" style="margin-top:2px">${r.idCK}</div>`:''}
+      </div>
+      ${statusPill(r.status)}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid rgba(120,120,180,0.12)">
+      <div style="font-size:12px;color:#797f90">→ <strong style="color:#5b6072;font-weight:600">${r.partner||'—'}</strong></div>
+      <div style="font-size:15px;font-weight:700">${fmtVND(r.amount)}</div>
+    </div>
+  </div>`).join(''):emptyState('Không có dữ liệu');
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Tracking CK'})}
+    <div class="scr-body">
+      <div class="tab-bar">${tabs}</div>
+      ${list}
+    </div>
+    <button class="fab-pill" onclick="openCKForm()">
+      ${icoSvg(ICO_PLUS,18)}
+      Bill CK
+    </button>`;
+}
+
+function setCKTab(t){ckTab=t;renderTracking()}
+
+// ============================================================
+// CK FORM
+// ============================================================
+function openCKForm(){
+  document.getElementById('ck-date').value=today();
+  document.getElementById('ck-kh').value='';
+  document.getElementById('ck-partner').value='';
+  document.getElementById('ck-amount').value='';
+  document.getElementById('ck-link').value='';
+  document.getElementById('ck-form-overlay').classList.add('open');
+}
+function closeCKForm(){document.getElementById('ck-form-overlay').classList.remove('open')}
+function ckPartnerAC(input){
+  const q=input.value.toLowerCase();
+  const ac=document.getElementById('ck-partner-ac');
+  if(!q){ac.style.display='none';return;}
+  const matches=D.partners.filter(p=>p.name.toLowerCase().includes(q)).slice(0,6);
+  if(!matches.length){ac.style.display='none';return;}
+  ac.innerHTML=matches.map(p=>`<div class="autocomplete-item" onclick="selectCKPartner('${p.name.replace(/'/g,"\\'")}',this.closest('.autocomplete-list'))">${p.name} ${typePill(p.type)}</div>`).join('');
+  ac.style.display='block';
+}
+function selectCKPartner(name,ac){document.getElementById('ck-partner').value=name;ac.style.display='none'}
+function saveCKForm(){
+  const date=document.getElementById('ck-date').value||today();
+  const kh=document.getElementById('ck-kh').value.trim();
+  const partner=document.getElementById('ck-partner').value.trim();
+  const amount=Number(document.getElementById('ck-amount').value)||0;
+  const link=document.getElementById('ck-link').value.trim();
+  if(!kh){alert('Vui lòng nhập tên KH');return;}
+  const idCK=genId('CK');
+  D.ck.push({nv:'',kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
+  saveData();
+  closeCKForm();
+  renderTracking();
+}
+
+// ============================================================
+// SCREEN 6: MATCH CK OVERLAY
+// ============================================================
+function openMatchOverlay(){
+  const ov=document.getElementById('match-overlay');
+  ov.classList.add('open');
+  renderMatchOverlay();
+}
+function closeMatchOverlay(){document.getElementById('match-overlay').classList.remove('open')}
+function renderMatchOverlay(){
+  const pending=D.sup.filter(s=>s.status==='Chờ điều phối');
+  const khNew=D.kh.filter(k=>k.status==='Mới nhập');
+  document.getElementById('match-sub').textContent=`${pending.length} gợi ý chờ duyệt`;
+  const body=document.getElementById('match-body');
+  if(!pending.length){
+    body.innerHTML=emptyState('Không có Sup nào chờ điều phối');return;
+  }
+  body.innerHTML=pending.map((s,si)=>{
+    const khRows=khNew.slice(0,3).map((k,ki)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:13px;background:rgba(125,142,240,0.07);border:1px solid rgba(125,142,240,0.14)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${k.name}</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#797f90;margin-top:2px"><span>${fmtVND(k.amount)}</span><span style="opacity:.45">·</span><span>${fmtDate(k.date)}</span></div>
+        </div>
+        <button onclick="rejectMatch(${si},${ki})" style="width:32px;height:32px;border-radius:50%;border:none;background:rgba(240,101,101,0.13);color:#e05656;cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <button onclick="acceptMatch(${si},${ki})" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(53,196,122,0.18);color:#2a9d63;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(53,196,122,0.25)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 6"/></svg>
+        </button>
+      </div>`).join('');
+    const totalKh=khNew.slice(0,3).reduce((a,k)=>a+(Number(k.amount)||0),0);
+    const pct=s.amount>0?Math.round(totalKh/s.amount*100):0;
+    const pctBg=pct>=85?'rgba(53,196,122,0.16)':pct>=50?'rgba(243,200,90,0.22)':'rgba(240,101,101,0.13)';
+    const pctFg=pct>=85?'#2a9d63':pct>=50?'#9a6a12':'#e05656';
+    const short=Math.max(0,s.amount-totalKh);
+    return `<div style="background:linear-gradient(160deg,rgba(255,255,255,0.74),rgba(255,255,255,0.48));border:1px solid rgba(255,255,255,0.75);border-radius:20px;box-shadow:0 8px 20px rgba(120,120,180,0.12);padding:16px;margin-bottom:14px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:14.5px;font-weight:700">${s.name}</span>${typePill(s.type)}</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#797f90;margin-top:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span>${fmtDate(s.date)}</span></div>
+        </div>
+        <div style="text-align:right"><div style="font-size:10px;color:#9aa0b2;font-weight:600;text-transform:uppercase">Công nợ</div><div style="font-size:15px;font-weight:700">${fmtVND(s.amount)}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        ${khRows||'<div style="font-size:12px;color:#9aa0b2">Không có KH mới nhập</div>'}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid rgba(120,120,180,0.12)">
+        <span style="padding:5px 11px;border-radius:999px;font-size:11.5px;font-weight:700;background:${pctBg};color:${pctFg}">${pct}% công nợ</span>
+        ${short>0?`<span style="font-size:11px;color:#797f90">thiếu <strong style="color:#e05656">${fmtVND(short)}</strong></span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function acceptMatch(si,ki){
+  const pending=D.sup.filter(s=>s.status==='Chờ điều phối');
+  const khNew=D.kh.filter(k=>k.status==='Mới nhập');
+  if(pending[si]) pending[si].status='Đã điều phối';
+  if(khNew[ki]) khNew[ki].status='Đã điều phối';
+  saveData();renderMatchOverlay();
+}
+function rejectMatch(si,ki){
+  const khNew=D.kh.filter(k=>k.status==='Mới nhập');
+  if(khNew[ki]) khNew[ki].status='Cancelled';
+  saveData();renderMatchOverlay();
+}
+function acceptAllMatches(){
+  D.sup.filter(s=>s.status==='Chờ điều phối').forEach(s=>s.status='Đã điều phối');
+  D.kh.filter(k=>k.status==='Mới nhập').forEach(k=>k.status='Đã điều phối');
+  saveData();renderMatchOverlay();
+}
+
+// ============================================================
+// SCREEN 7: CÔNG NỢ SUP/CHECKER
+// ============================================================
+function renderSupDebt(){
+  const el=document.getElementById('scr-supDebt');
+  const TABS=[{id:'all',label:'Tất cả'},{id:'Sup',label:'Sup'},{id:'Checker',label:'Checker'}];
+  let rows=[...D.sup].reverse();
+  if(supTab!=='all') rows=rows.filter(s=>s.type===supTab);
+
+  const tabs=TABS.map(t=>`<button class="tab-btn ${supTab===t.id?'active':''}" onclick="setSupTab('${t.id}')">${t.label}</button>`).join('');
+
+  const list=rows.length?rows.map(s=>`<div class="list-row">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:14px;font-weight:600">${s.name||'—'}</span>${typePill(s.type)}
+      </div>
+      ${statusPill(s.status||'Mới nhập')}
+    </div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#797f90">
+        <span style="display:flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>${fmtDate(s.date)}</span>
+        ${s.stk?`<span style="display:flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6.5v11"/><path d="M14.8 9.3c-.6-1-1.8-1.4-3-1.3-1.3.1-2.3.9-2.3 2s.9 1.7 2.6 2 2.7.9 2.7 2.1-1.1 1.9-2.5 1.9c-1.3 0-2.5-.5-3-1.5"/></svg>${s.stk}</span>`:''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:16px;font-weight:700">${fmtVND(s.amount)}</div>
+        ${s.idCK?`<div class="mono">${s.idCK}</div>`:''}
+      </div>
+    </div>
+  </div>`).join(''):emptyState('Chưa có công nợ Sup/Checker');
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Công nợ Sup/Checker'})}
+    <div class="scr-body">
+      <div class="tab-bar">${tabs}</div>
+      ${list}
+    </div>
+    <button class="fab" onclick="openSupForm()">${icoSvg(ICO_PLUS,24)}</button>`;
+}
+
+function setSupTab(t){supTab=t;renderSupDebt()}
+
+// ============================================================
+// SUP FORM
+// ============================================================
+function openSupForm(){
+  document.getElementById('sup-date').value=today();
+  const sel=document.getElementById('sup-nv');
+  sel.innerHTML='<option value="">-- Chọn NV --</option>';
+  CFG_USERS.filter(u=>u.active!==false).forEach(u=>{
+    sel.innerHTML+=`<option value="${u.name}">${u.name}</option>`;
+  });
+  document.getElementById('sup-name').value='';
+  document.getElementById('sup-amount').value='';
+  document.getElementById('sup-note').value='';
+  document.getElementById('sup-form-overlay').classList.add('open');
+}
+function closeSupForm(){document.getElementById('sup-form-overlay').classList.remove('open')}
+function supNameAC(input){
+  const q=input.value.toLowerCase();
+  const ac=document.getElementById('sup-name-ac');
+  if(!q){ac.style.display='none';return;}
+  const type=document.getElementById('sup-type').value;
+  const matches=D.partners.filter(p=>p.name.toLowerCase().includes(q)&&(!type||p.type===type)).slice(0,6);
+  if(!matches.length){ac.style.display='none';return;}
+  ac.innerHTML=matches.map(p=>`<div class="autocomplete-item" onclick="selectSupName('${p.name.replace(/'/g,"\\'")}',this.closest('.autocomplete-list'))">${p.name} ${typePill(p.type)}</div>`).join('');
+  ac.style.display='block';
+}
+function selectSupName(name,ac){document.getElementById('sup-name').value=name;ac.style.display='none'}
+function saveSupForm(){
+  const date=document.getElementById('sup-date').value||today();
+  const nv=document.getElementById('sup-nv').value;
+  const type=document.getElementById('sup-type').value;
+  const name=document.getElementById('sup-name').value.trim();
+  const amount=Number(document.getElementById('sup-amount').value)||0;
+  const note=document.getElementById('sup-note').value.trim();
+  if(!name){alert('Vui lòng nhập tên Sup/Checker');return;}
+  const id=genId('SP');
+  D.sup.push({id,date,nv,type,name,amount,stk:'',status:'Chờ điều phối',idCK:'',note});
+  saveData();
+  closeSupForm();
+  renderSupDebt();
+}
+
+// ============================================================
+// SCREEN 8: DANH SÁCH SUP/CHECKER
+// ============================================================
+function renderSupList(){
+  const el=document.getElementById('scr-supList');
+  const list=D.partners.length?D.partners.map(p=>`<div style="display:flex;align-items:center;gap:13px;background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.72);border-radius:16px;box-shadow:0 5px 14px rgba(120,120,180,0.08);padding:13px 15px;margin-bottom:10px">
+    <div style="width:42px;height:42px;border-radius:13px;background:linear-gradient(150deg,#8a9bf2,#b39bea);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex:none">${initials(p.name)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+        <span style="font-size:13.5px;font-weight:600">${p.name}</span>${typePill(p.type)}
+      </div>
+      ${p.stk?`<div class="mono">${p.stk}</div>`:''}
+    </div>
+  </div>`).join(''):emptyState('Chưa có Sup/Checker nào');
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Danh sách Sup/Checker'})}
+    <div class="scr-body">${list}</div>
+    <button class="fab" onclick="openPartnerForm()">${icoSvg(ICO_PLUS,24)}</button>`;
+}
+
+// ============================================================
+// PARTNER FORM
+// ============================================================
+function openPartnerForm(){
+  document.getElementById('pt-name').value='';
+  document.getElementById('pt-stk').value='';
+  document.getElementById('pt-tm').value='';
+  document.getElementById('partner-form-overlay').classList.add('open');
+}
+function closePartnerForm(){document.getElementById('partner-form-overlay').classList.remove('open')}
+function savePartnerForm(){
+  const type=document.getElementById('pt-type').value;
+  const name=document.getElementById('pt-name').value.trim();
+  const stk=document.getElementById('pt-stk').value.trim();
+  const tm=Number(document.getElementById('pt-tm').value)||0;
+  if(!name){alert('Vui lòng nhập tên');return;}
+  D.partners.push({type,name,stk,tm,am:0});
+  saveData();
+  closePartnerForm();
+  renderSupList();
+}
+
+// ============================================================
+// SCREEN 9: CÀI ĐẶT
+// ============================================================
+function renderSettings(){
+  const el=document.getElementById('scr-settings');
+  const userRows=CFG_USERS.map(u=>`<div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-bottom:1px solid rgba(120,120,180,0.1)">
+    <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(150deg,#9fe5d8,#8a9bf2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none">${initials(u.name)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13.5px;font-weight:600;color:#2a2e3a">${u.name}</div>
+      <div style="font-size:11px;color:#9aa0b2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email||u.user||''}</div>
+    </div>
+    ${rolePill(u.role)}
+  </div>`).join('');
+
+  const mapRows=Object.entries(KH_SUP_MAP).length?Object.entries(KH_SUP_MAP).map(([kh,sup])=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 15px;background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.70);border-radius:16px;box-shadow:0 5px 14px rgba(120,120,180,0.08);margin-bottom:10px">
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#9aa0b2">KH</div>
+        <div style="font-size:13.5px;font-weight:600">${kh}</div>
+      </div>
+      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px">→</div>
+      <div style="flex:1;text-align:right">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#9aa0b2">Sup</div>
+        <div style="font-size:13.5px;font-weight:600;color:#5b6bd6">${sup}</div>
+      </div>
+    </div>`).join(''):emptyState('Chưa có mapping nào');
+
+  el.innerHTML=`
+    ${buildHdr({left:'menu',title:'Cài đặt'})}
+    <div class="scr-body">
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9aa0b2;padding:0 6px 8px">Tài khoản đăng nhập</div>
+        <div style="background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.70);border-radius:20px;box-shadow:0 8px 22px rgba(120,120,180,0.10);overflow:hidden">
+          ${userRows||'<div style="color:#9aa0b2;font-size:13px;padding:15px">Chưa có tài khoản</div>'}
+        </div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9aa0b2;padding:0 6px 8px">Mapping KH ↔ Sup</div>
+        ${mapRows}
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9aa0b2;padding:0 6px 8px">Data Upload</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 20px;background:linear-gradient(160deg,rgba(255,255,255,0.60),rgba(255,255,255,0.34));border:2px dashed rgba(140,150,230,0.4);border-radius:22px;cursor:pointer" onclick="triggerUpload()">
+          <div style="width:56px;height:56px;border-radius:18px;background:linear-gradient(150deg,#8a9bf2,#b39bea);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 8px 20px rgba(150,140,230,0.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></div>
+          <div style="font-size:14px;font-weight:600;text-align:center">Tải file sao kê / Excel</div>
+          <div style="font-size:11.5px;color:#8a8fa3;text-align:center">.xlsx, .csv — tự động đối chiếu công nợ & bill CK</div>
+          <button style="border:none;cursor:pointer;font-family:inherit;margin-top:2px;padding:11px 24px;border-radius:999px;background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;font-size:13px;font-weight:600;box-shadow:0 8px 18px rgba(150,140,230,0.4)">Chọn file</button>
+        </div>
+        <input type="file" id="upload-input" accept=".xlsx,.json" style="display:none" onchange="handleUpload(this)">
+      </div>
+      <a href="/index.html" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:18px;border:1px solid rgba(140,150,230,0.25);background:rgba(255,255,255,0.5);color:#5b6bd6;text-decoration:none;font-size:14px;font-weight:600;margin-bottom:14px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        Mở phiên bản Desktop
+      </a>
+    </div>`;
+}
+
+function triggerUpload(){document.getElementById('upload-input').click()}
+function handleUpload(input){
+  const file=input.files[0];
+  if(!file) return;
+  if(file.name.endsWith('.json')){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const data=JSON.parse(e.target.result);
+        if(data.kh) D.kh=data.kh;
+        if(data.sup) D.sup=data.sup;
+        if(data.ck) D.ck=data.ck;
+        if(data.partners) D.partners=data.partners;
+        if(data.khChars) D.khChars=data.khChars;
+        if(data.ctr) D.ctr=data.ctr;
+        saveData();
+        alert('Đã tải dữ liệu thành công!');
+        renderScreen(currentScreen);
+      }catch(err){alert('Lỗi đọc file: '+err.message);}
+    };
+    reader.readAsText(file);
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init(){
+  loadData();
+  CFG_USERS=loadUsers();
+  KH_SUP_MAP=loadMapping();
+  navTo('overview');
+  // close autocomplete on outside click
+  document.addEventListener('click',e=>{
+    document.querySelectorAll('.autocomplete-list').forEach(ac=>{
+      if(!ac.closest('.ac-wrap').contains(e.target)) ac.style.display='none';
+    });
+  });
+}
+
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
