@@ -4376,12 +4376,12 @@ init();
         <input type="file" id="i_cfile" accept="image/*" onchange="readCkFile(this)"/>
         <button type="button" class="btn btn-sm" onclick="pasteCkBillClipboard()">Dán từ clipboard</button>
       </div>
-      <div style="font-size:12px;color:var(--txt2);margin-top:8px">Bấm vào khung này rồi Ctrl+V, hoặc bấm Dán từ clipboard.</div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:8px">Kéo thả ảnh vào khung này, bấm Ctrl+V, hoặc bấm Dán từ clipboard.</div>
       <img id="i_cpreview" alt="" style="display:none;margin-top:10px;max-width:100%;max-height:180px;border-radius:8px">
     </div>
   </div>
   <div class="fr"><label>Số tiền (VNĐ)</label><input type="text" id="i_cam" placeholder="Số tiền" oninput="formatCurrencyInput(this)"/></div>
-  <div style="font-size:12px;color:var(--txt2);margin-top:-6px">Dán hoặc chọn ảnh bill, app đọc ngày và số tiền. Sửa lại nếu đọc lệch. Ảnh lưu trong app và tự xóa sau 3 tháng.</div>
+  <div style="font-size:12px;color:var(--txt2);margin-top:-6px">Dán, kéo thả hoặc chọn ảnh bill, app đọc ngày và số tiền. Sửa lại nếu đọc lệch. Ảnh lưu trong app và tự xóa sau 3 tháng.</div>
   <div class="mact">
     <button class="btn" onclick="closeM('mck')">Hủy</button>
     <button class="btn btn-p" onclick="saveCK()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Lưu bill</button>
@@ -7782,6 +7782,10 @@ function showCkBillPreview(src){
 }
 function applyCkBillFile(file){
   if(!file) return;
+  const stamp = (file.name||'') + ':' + file.size + ':' + (file.lastModified||0);
+  if(applyCkBillFile.last===stamp && Date.now()-(applyCkBillFile.at||0)<800) return;
+  applyCkBillFile.last = stamp;
+  applyCkBillFile.at = Date.now();
   if(file.size > 1500000){ toast('Ảnh lớn hơn 1.5MB, chọn ảnh nhỏ hơn', true); return; }
   const reader = new FileReader();
   reader.onload = function(){
@@ -7832,6 +7836,15 @@ function onCkBillPaste(e){
       return;
     }
   }
+}
+function onCkBillDrop(e){
+  const files = (e.dataTransfer && e.dataTransfer.files) || [];
+  let file = null;
+  for(let i=0;i<files.length;i++){
+    if(/^image\//.test(files[i].type)){ file = files[i]; break; }
+  }
+  if(!file){ toast('Chỉ kéo thả file ảnh', true); return; }
+  applyCkBillFile(file);
 }
 function pasteCkBillClipboard(){
   if(!navigator.clipboard || !navigator.clipboard.read){
@@ -8519,6 +8532,42 @@ el('m-edit-kh-char').addEventListener('click',function(e){if(e.target===this)clo
 el('m-edit-ck').addEventListener('click',function(e){if(e.target===this)closeM('m-edit-ck');});
 el('m-add-kh-char').addEventListener('click',function(e){if(e.target===this)closeM('m-add-kh-char');});
 el('m-del-company-bank').addEventListener('click',function(e){if(e.target===this)closeM('m-del-company-bank');});
+(function(){
+  const zone = el('ck-bill-drop');
+  if(!zone) return;
+  function highlight(on){
+    zone.style.borderColor = on ? '#5b6bd6' : '';
+    zone.style.background = on ? 'rgba(91,107,214,0.08)' : '';
+  }
+  zone.addEventListener('dragenter', function(e){
+    e.preventDefault();
+    highlight(true);
+  });
+  zone.addEventListener('dragover', function(e){
+    e.preventDefault();
+    if(e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    highlight(true);
+  });
+  zone.addEventListener('dragleave', function(e){
+    if(zone.contains(e.relatedTarget)) return;
+    highlight(false);
+  });
+  zone.addEventListener('drop', function(e){
+    e.preventDefault();
+    highlight(false);
+    onCkBillDrop(e);
+  });
+})();
+document.addEventListener('dragover', function(e){
+  const modal = el('mck');
+  if(!modal || !modal.classList.contains('on')) return;
+  e.preventDefault();
+});
+document.addEventListener('drop', function(e){
+  const modal = el('mck');
+  if(!modal || !modal.classList.contains('on')) return;
+  e.preventDefault();
+});
 document.addEventListener('paste', function(e){
   const modal = el('mck');
   if(!modal || !modal.classList.contains('on')) return;
