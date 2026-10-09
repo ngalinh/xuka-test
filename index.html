@@ -1238,8 +1238,8 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       <div class="form-section"><label class="form-label">Ngày</label><input type="date" class="form-input" id="mgc-date"></div>
       <div class="form-section"><label class="form-label">Website</label><input type="text" class="form-input" id="mgc-web" placeholder="Website"></div>
       <div class="form-section"><label class="form-label">Sup</label><select class="form-input" id="mgc-sup"></select></div>
-      <div class="form-section"><label class="form-label">USD</label><input type="number" class="form-input" id="mgc-usd" placeholder="0" oninput="mRecalcGc()"></div>
-      <div class="form-section"><label class="form-label">Rate</label><input type="number" class="form-input" id="mgc-rate" placeholder="24000" oninput="mRecalcGc()"></div>
+      <div class="form-section"><label class="form-label">USD</label><input type="text" inputmode="decimal" class="form-input" id="mgc-usd" placeholder="0.00" oninput="mRecalcGc()" onblur="mFmtGcUsd()"></div>
+      <div class="form-section"><label class="form-label">Rate</label><input type="text" inputmode="numeric" class="form-input" id="mgc-rate" placeholder="24,000" oninput="mFmtGcRate()"></div>
       <div class="form-section"><label class="form-label">VNĐ</label><input type="text" class="form-input" id="mgc-vnd" readonly></div>
       <div class="form-section"><label class="form-label">Người thu</label><input type="text" class="form-input" id="mgc-who"></div>
       <div class="form-section"><label class="form-label">Tình trạng</label>
@@ -2589,10 +2589,39 @@ function renderMuaGc(){
   if(box) box.innerHTML=list;
 }
 function mGcNum(v){ return Number(String(v||'').replace(/[^\d.]/g,''))||0; }
+function mGroupIntInput(input){
+  var raw=input.value;
+  var caret=input.selectionStart==null?raw.length:input.selectionStart;
+  var digitsBefore=raw.slice(0,caret).replace(/\D/g,'').length;
+  var digits=raw.replace(/\D/g,'');
+  var next=digits.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  if(input.value===next) return;
+  input.value=next;
+  var seen=0, pos=0;
+  if(digitsBefore){
+    for(;pos<next.length;pos++){
+      if(/\d/.test(next[pos])) seen++;
+      if(seen>=digitsBefore){ pos++; break; }
+    }
+  }
+  try{ input.setSelectionRange(pos,pos); }catch(e){}
+}
+function mFmtGcRate(){
+  mGroupIntInput(document.getElementById('mgc-rate'));
+  mRecalcGc();
+}
+function mFmtGcUsd(){
+  var input=document.getElementById('mgc-usd');
+  var raw=String(input.value||'').trim();
+  if(!raw){ input.value=''; mRecalcGc(); return; }
+  var n=parseFloat(raw.replace(/,/g,''));
+  input.value=isNaN(n)?'':n.toFixed(2);
+  mRecalcGc();
+}
 function mRecalcGc(){
   var usd=mGcNum(document.getElementById('mgc-usd').value);
   var rate=mGcNum(document.getElementById('mgc-rate').value);
-  document.getElementById('mgc-vnd').value = usd&&rate ? Math.round(usd*rate).toLocaleString('vi-VN') : '';
+  document.getElementById('mgc-vnd').value = usd&&rate ? Math.round(usd*rate).toLocaleString('en-US') : '';
 }
 function mGcLocked(s){
   if(!s) return false;
@@ -2606,10 +2635,11 @@ function openMuaGcForm(i){
   document.getElementById('mgc-idx').value=row?String(i):'';
   document.getElementById('mgc-date').value=row?(row.date||''):today();
   document.getElementById('mgc-web').value=row?(row.website||''):'';
-  var names=D.partners.map(function(p){return p.name;}).filter(Boolean).sort(function(a,b){return a.localeCompare(b,'vi');});
+  var names=D.partners.filter(function(p){return p.type==='Sup';}).map(function(p){return p.name;}).filter(Boolean);
+  names=names.filter(function(n,i){return names.indexOf(n)===i;}).sort(function(a,b){return a.localeCompare(b,'vi');});
   fillSelect('mgc-sup', names, row?row.sup:'', true);
-  document.getElementById('mgc-usd').value=row&&row.usd!=null?row.usd:'';
-  document.getElementById('mgc-rate').value=row&&row.rate!=null?row.rate:24000;
+  document.getElementById('mgc-usd').value=row&&row.usd!=null&&row.usd!==''?Number(row.usd).toFixed(2):'';
+  document.getElementById('mgc-rate').value=row&&row.rate!=null?Math.round(Number(row.rate)||0).toLocaleString('en-US'):(24000).toLocaleString('en-US');
   var who=row?(row.who||''):((window.currentUser&&window.currentUser.name)||'');
   document.getElementById('mgc-who').value=who;
   document.getElementById('mgc-status').value=row&&row.status==='Y/C TT'?'Y/C TT':'';
@@ -4407,8 +4437,8 @@ init();
   </div>
   <div class="fr"><label>Sup</label><select id="mg_sup"></select></div>
   <div class="fg">
-    <div class="fr"><label>USD</label><input id="mg_usd" inputmode="decimal" placeholder="0" oninput="recalcMuaGcVnd()"/></div>
-    <div class="fr"><label>Rate</label><input id="mg_rate" inputmode="decimal" placeholder="24000" oninput="recalcMuaGcVnd()"/></div>
+    <div class="fr"><label>USD</label><input id="mg_usd" inputmode="decimal" placeholder="0.00" oninput="recalcMuaGcVnd()" onblur="fmtMuaGcUsd()"/></div>
+    <div class="fr"><label>Rate</label><input id="mg_rate" inputmode="numeric" placeholder="24,000" oninput="fmtMuaGcRate()"/></div>
   </div>
   <div class="fg">
     <div class="fr"><label>VNĐ</label><input id="mg_vnd" readonly tabindex="-1"/></div>
@@ -6802,13 +6832,42 @@ function parseGcNum(v){
   const n = parseFloat(String(v||'').replace(/,/g,''));
   return isNaN(n) ? 0 : n;
 }
+function groupIntInput(input){
+  const raw = input.value;
+  const caret = input.selectionStart==null ? raw.length : input.selectionStart;
+  const digitsBefore = raw.slice(0, caret).replace(/\D/g,'').length;
+  const digits = raw.replace(/\D/g,'');
+  const next = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if(input.value===next) return;
+  input.value = next;
+  let seen = 0, pos = 0;
+  if(digitsBefore){
+    for(; pos<next.length; pos++){
+      if(/\d/.test(next[pos])) seen++;
+      if(seen>=digitsBefore){ pos++; break; }
+    }
+  }
+  try{ input.setSelectionRange(pos, pos); }catch(e){}
+}
+function fmtMuaGcRate(){
+  groupIntInput(el('mg_rate'));
+  recalcMuaGcVnd();
+}
+function fmtMuaGcUsd(){
+  const input = el('mg_usd');
+  const raw = String(input.value||'').trim();
+  if(!raw){ input.value=''; recalcMuaGcVnd(); return; }
+  const n = parseFloat(raw.replace(/,/g,''));
+  input.value = isNaN(n) ? '' : n.toFixed(2);
+  recalcMuaGcVnd();
+}
 function recalcMuaGcVnd(){
   const usd = parseGcNum(el('mg_usd').value);
   const rate = parseGcNum(el('mg_rate').value);
   el('mg_vnd').value = usd && rate ? Math.round(usd * rate).toLocaleString('en-US') : '';
 }
 function fillGcSup(selected){
-  const names = [...new Set(D.partners.map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
+  const names = [...new Set(D.partners.filter(p=>p.type==='Sup').map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
   fillSelect('mg_sup', names, selected||'', true);
 }
 function openMuaGc(i){
@@ -6818,8 +6877,8 @@ function openMuaGc(i){
   el('mg_date').value = row ? (row.date||'') : today();
   el('mg_web').value = row ? (row.website||'') : '';
   fillGcSup(row ? row.sup : '');
-  el('mg_usd').value = row && row.usd!=null ? row.usd : '';
-  el('mg_rate').value = row && row.rate!=null ? row.rate : 24000;
+  el('mg_usd').value = row && row.usd!=null && row.usd!=='' ? Number(row.usd).toFixed(2) : '';
+  el('mg_rate').value = row && row.rate!=null ? Math.round(Number(row.rate)||0).toLocaleString('en-US') : (24000).toLocaleString('en-US');
   el('mg_who').value = row ? (row.who||'') : (currentUser?.name||'');
   el('mg_status').value = row && row.status==='Y/C TT' ? 'Y/C TT' : '';
   recalcMuaGcVnd();
