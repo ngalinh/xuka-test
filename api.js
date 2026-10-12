@@ -198,6 +198,131 @@ async function appendCheckerPayment(file, payment) {
   return { row };
 }
 
+const THU_CHI_ID = '1bVQLczc-vYsjc0ngWG2cx8raLDkFjf7CyaNkiXSVRgA';
+const THU_CHI_GID = 452194327;
+
+function colLetter(n) {
+  let s = '';
+  n += 1;
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+function normHead(s) {
+  return String(s || '').trim().toLowerCase();
+}
+
+function sheetSerial(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  let y, mo, d;
+  if (m) {
+    y = Number(m[1]);
+    mo = Number(m[2]);
+    d = Number(m[3]);
+  } else {
+    const now = new Date();
+    y = now.getFullYear();
+    mo = now.getMonth() + 1;
+    d = now.getDate();
+  }
+  return Math.round((Date.UTC(y, mo - 1, d) - Date.UTC(1899, 11, 30)) / 86400000);
+}
+
+async function sheetProps(id) {
+  const token = await googleToken();
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '?fields=' + encodeURIComponent('sheets.properties');
+  return httpsRequest(url, { method: 'GET', headers: { Authorization: 'Bearer ' + token } });
+}
+
+async function lastUsedRow(title, col) {
+  const existing = await sheetValuesGet(THU_CHI_ID, "'" + title + "'!" + col + ':' + col);
+  const vals = (existing && existing.values) || [];
+  let last = 1;
+  for (let i = 0; i < vals.length; i++) {
+    if (vals[i] && String(vals[i][0] == null ? '' : vals[i][0]).trim() !== '') last = i + 1;
+  }
+  return last;
+}
+
+async function appendThuChi(payment) {
+  const amount = Number(payment && payment.amount);
+  if (!amount) return { error: 'Không có số tiền thanh toán' };
+  if (!payment || !payment.content || !payment.field || !payment.category) {
+    return { error: 'Thiếu nội dung Thu Chi' };
+  }
+  let title = '';
+  try {
+    const meta = await sheetProps(THU_CHI_ID);
+    const sheets = (meta && meta.sheets) || [];
+    const hit = sheets.map(function (s) { return s.properties; }).find(function (s) { return s && s.sheetId === THU_CHI_GID; });
+    if (!hit) return { error: 'Không thấy tab Thu Chi trong file' };
+    title = String(hit.title || '').replace(/'/g, "''");
+  } catch (e) {
+    const msg = (e && e.message) || '';
+    if (/403|permission|forbidden/i.test(msg)) {
+      return { error: 'Tài khoản Google của Xuka chưa có quyền sửa file Thu Chi' };
+    }
+    return { error: msg || 'Không ghi được file Thu Chi' };
+  }
+  let header = [];
+  try {
+    const res = await sheetValuesGet(THU_CHI_ID, "'" + title + "'!1:1");
+    header = (res && res.values && res.values[0]) || [];
+  } catch (e) {
+    return { error: (e && e.message) || 'Không đọc được file Thu Chi' };
+  }
+  const want = {
+    month: 'tháng ht',
+    date: 'ngày tt',
+    field: 'ngành nghề',
+    cat: 'danh mục thu chi',
+    content: 'nội dung',
+    chi: 'chi',
+    pttt: 'pttt',
+    note: 'ghi chú'
+  };
+  const line = header.map(normHead);
+  const idx = {};
+  for (const key of Object.keys(want)) {
+    idx[key] = line.findIndex(function (c) { return c === want[key]; });
+    if (idx[key] < 0) return { error: 'Không thấy cột ' + want[key] + ' trên file Thu Chi' };
+  }
+  let row = 2;
+  try {
+    const lastDate = await lastUsedRow(title, colLetter(idx.date));
+    const lastContent = await lastUsedRow(title, colLetter(idx.content));
+    row = Math.max(lastDate, lastContent, 1) + 1;
+  } catch (e) {
+    return { error: (e && e.message) || 'Không ghi được file Thu Chi' };
+  }
+  const min = Math.min(idx.month, idx.date, idx.field, idx.cat, idx.content, idx.chi, idx.pttt, idx.note);
+  const max = Math.max(idx.month, idx.date, idx.field, idx.cat, idx.content, idx.chi, idx.pttt, idx.note);
+  const values = new Array(max - min + 1).fill('');
+  const note = /^https?:\/\//i.test(payment.note) ? String(payment.note) : '';
+  values[idx.month - min] = Number(payment.month) || (new Date().getMonth() + 1);
+  values[idx.date - min] = sheetSerial(payment.date);
+  values[idx.field - min] = String(payment.field);
+  values[idx.cat - min] = String(payment.category);
+  values[idx.content - min] = String(payment.content);
+  values[idx.chi - min] = amount;
+  values[idx.pttt - min] = String(payment.pttt || '');
+  values[idx.note - min] = note;
+  try {
+    await sheetValuesUpdate(THU_CHI_ID, "'" + title + "'!" + colLetter(min) + row + ':' + colLetter(max) + row, [values]);
+  } catch (e) {
+    const msg = (e && e.message) || '';
+    if (/403|permission|forbidden/i.test(msg)) {
+      return { error: 'Tài khoản Google của Xuka chưa có quyền sửa file Thu Chi' };
+    }
+    return { error: msg || 'Không ghi được file Thu Chi' };
+  }
+  return { row };
+}
+
 function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -244,6 +369,19 @@ http.createServer((req, res) => {
       let payload = {};
       try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
       const result = await appendCheckerPayment(payload.file, payload);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    }).catch(() => {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end('{"error":"invalid"}');
+    });
+    return;
+  }
+  if (route === '/api/thu-chi' && req.method === 'POST') {
+    readBody(req, 1e6).then(async (body) => {
+      let payload = {};
+      try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
+      const result = await appendThuChi(payload);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
     }).catch(() => {
