@@ -1948,7 +1948,13 @@ function khDebtListHtml(){
   let rows=[...D.kh].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   if(khFilter!=='all') rows=rows.filter(k=>khChannel(k)===khFilter);
   if(khStatusFilter) rows=rows.filter(k=>(k.status||'Mới nhập')===khStatusFilter);
-  if(khSearch) rows=rows.filter(k=>(k.name||'').toLowerCase().includes(khSearch.toLowerCase()));
+  if(khSearch){
+    const q=khSearch.toLowerCase();
+    rows=rows.filter(k=>{
+      const who=mKhNamePhone(D.khChars.find(c=>c.name===k.name)||{name:k.name||''});
+      return (k.name||'').toLowerCase().includes(q)||who.name.toLowerCase().includes(q)||who.phone.includes(q);
+    });
+  }
   const canDpMoiNhap=['admin','sale'].includes(mRole);
   const canDpChoKhach=['admin','mh'].includes(mRole);
   return rows.length?rows.map(k=>{
@@ -1956,6 +1962,7 @@ function khDebtListHtml(){
     const chColor=ch==='Linh Dương'?'rgba(125,142,240,0.15)':ch==='Linh Thảo'?'rgba(177,151,230,0.2)':'rgba(159,229,216,0.4)';
     const chFg=ch==='Linh Dương'?'#5b6bd6':ch==='Linh Thảo'?'#8a6fc4':'#1f8a7a';
     const char=D.khChars.find(c=>c.name===k.name);
+    const who=mKhNamePhone(char||{name:k.name||''});
     const charInfo=char&&(char.tm||char.am)?'<span style="font-size:10.5px;color:#797f90">'+SVG_CLOCK+char.tm+(char.am?' · '+SVG_COIN+char.am:'')+'</span>':'';
     const sup=k.idCK?D.sup.find(s=>s.idCK===k.idCK):null;
     const supStk=k.stk||(sup?sup.stk:'');
@@ -1981,7 +1988,8 @@ function khDebtListHtml(){
     }
     return '<div class="list-row">'
       +'<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">'
-      +'<div style="flex:1"><div style="font-size:14.5px;font-weight:600">'+(k.name||'—')+'</div>'
+      +'<div style="flex:1"><div style="font-size:14.5px;font-weight:600">'+escapeHtml(who.name||'—')+'</div>'
+      +(who.phone?'<div style="font-size:11.5px;color:#8a8fa3;margin-top:1px">'+escapeHtml(who.phone)+'</div>':'')
       +(k.nv?'<div style="font-size:11px;color:#9aa0b2">NV: '+k.nv+'</div>':'')
       +(charInfo?'<div>'+charInfo+'</div>':'')
       +'</div>'+statusPill(k.status||'Mới nhập')+'</div>'
@@ -6009,6 +6017,10 @@ function khDebtLabel(name){
   const char = D.khChars.find(c=>c.name===name);
   return char ? khNamePhone(char).name : khNamePhone({name}).name;
 }
+function khDebtPhone(name){
+  const char = D.khChars.find(c=>c.name===name);
+  return (char ? khNamePhone(char) : khNamePhone({name})).phone || '';
+}
 function copyKhStk(khId){
   const k = D.kh.find(x=>x._id===khId); if(!k) return;
   const sup = k.idCK ? D.sup.find(s=>s.idCK===k.idCK) : null;
@@ -6081,7 +6093,8 @@ function rt2(){
   let list = D.kh.filter(k=>{
     if(st.length && !st.includes(k.status)) return false;
     const label = khDebtLabel(k.name).toLowerCase();
-    if(q && !label.includes(q) && !String(k.name||'').toLowerCase().includes(q)) return false;
+    const phone = khDebtPhone(k.name);
+    if(q && !label.includes(q) && !String(k.name||'').toLowerCase().includes(q) && !phone.includes(q)) return false;
     if(ch){
       const khChar = D.khChars.find(c=>c.name===k.name);
       if(!khChar || khChar.ch!==ch) return false;
@@ -6096,6 +6109,8 @@ function rt2(){
   el('tb2').innerHTML = items.length ? items.map((k,idx)=>{
     const sup = k.idCK ? D.sup.find(s=>s.idCK===k.idCK) : null;
     const stk = k.stk || (sup && sup.stk) || '';
+    const phone = khDebtPhone(k.name);
+    const phoneHtml = phone ? '<div style="font-size:11.5px;font-weight:500;color:#8a8fa3;margin-top:2px">'+escapeHtml(phone)+'</div>' : '';
     const tkCell = (k.status==='Mới nhập' || !stk)
       ? '<span style="color:var(--txt3)">—</span>'
       : '<div style="display:flex;align-items:flex-start;gap:6px">'+stkCell(stk)+'<button class="btn btn-sm" title="Copy TK nhận" onclick="copyKhStk(\''+k._id+'\')">Copy</button></div>';
@@ -6129,7 +6144,7 @@ function rt2(){
       +'<td>'+(start+idx+1)+'</td>'
       +'<td class="nowrap">'+escapeHtml(k.date||'')+'</td>'
       +'<td class="nowrap">'+escapeHtml(k.nv||'—')+'</td>'
-      +'<td style="font-weight:600">'+escapeHtml(khDebtLabel(k.name))+'</td>'
+      +'<td><div style="font-weight:600">'+escapeHtml(khDebtLabel(k.name))+'</div>'+phoneHtml+'</td>'
       +'<td class="num">'+fmt(k.origAmount||k.amount)+'</td>'
       +'<td>'+tkCell+'</td>'
       +'<td class="num">'+cdCell+'</td>'
