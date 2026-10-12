@@ -1169,8 +1169,7 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       </div>
       <div class="form-section">
         <label class="form-label">Thời gian bank</label>
-        <input type="text" class="form-input" id="khc-tm" placeholder="Chọn hoặc nhập..." list="dl-khc-tm" autocomplete="off">
-        <datalist id="dl-khc-tm"></datalist>
+        <div class="ac-wrap"><input type="text" class="form-input" id="khc-tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)"><div class="autocomplete-list" style="display:none"></div></div>
       </div>
     </div>
     <div class="form-bottom">
@@ -1207,13 +1206,11 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       </div>
       <div class="form-section">
         <label class="form-label">Thời gian y/c bank</label>
-        <input type="text" class="form-input" id="pt-tm" placeholder="Chọn hoặc nhập..." list="dl-pt-tm" autocomplete="off">
-        <datalist id="dl-pt-tm"></datalist>
+        <div class="ac-wrap"><input type="text" class="form-input" id="pt-tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)"><div class="autocomplete-list" style="display:none"></div></div>
       </div>
       <div class="form-section">
         <label class="form-label">Số tiền min/Lệnh</label>
-        <input type="text" class="form-input" id="pt-am" placeholder="Chọn hoặc nhập..." list="dl-pt-am" autocomplete="off">
-        <datalist id="dl-pt-am"></datalist>
+        <div class="ac-wrap"><input type="text" class="form-input" id="pt-am" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)"><div class="autocomplete-list" style="display:none"></div></div>
       </div>
     </div>
     <div class="form-bottom">
@@ -1339,8 +1336,8 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       <div class="form-section"><label class="form-label">ID Đối tác</label><input class="form-input" id="m-ep-name" placeholder="Nhập ID đối tác..." oninput="clearPidErr('m-ep-name','m-ep-name-err')"><div id="m-ep-name-err" style="display:none;color:#e05656;font-size:12.5px;font-weight:600;margin-top:6px"></div></div>
       <div class="form-section"><label class="form-label">Loại</label><select class="form-input" id="m-ep-type"><option value="Sup">Sup</option><option value="Checker">Checker</option></select></div>
       <div class="form-section"><label class="form-label">STK</label><input class="form-input" id="m-ep-stk" placeholder="Số tài khoản..."></div>
-      <div class="form-section"><label class="form-label">Thời gian y/c bank</label><input class="form-input" id="m-ep-tm" placeholder="Chọn hoặc nhập..." list="dl-m-ep-tm" autocomplete="off"><datalist id="dl-m-ep-tm"></datalist></div>
-      <div class="form-section"><label class="form-label">Số tiền min/Lệnh</label><input class="form-input" id="m-ep-am" placeholder="Chọn hoặc nhập..." list="dl-m-ep-am" autocomplete="off"><datalist id="dl-m-ep-am"></datalist></div>
+      <div class="form-section"><label class="form-label">Thời gian y/c bank</label><div class="ac-wrap"><input class="form-input" id="m-ep-tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)"><div class="autocomplete-list" style="display:none"></div></div></div>
+      <div class="form-section"><label class="form-label">Số tiền min/Lệnh</label><div class="ac-wrap"><input class="form-input" id="m-ep-am" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)"><div class="autocomplete-list" style="display:none"></div></div></div>
     </div>
     <div class="form-bottom"><button class="form-btn-cancel" onclick="closeMEditPartner()">Hủy</button><button class="form-btn-save" onclick="saveMEditPartner()">Lưu</button></div>
   </div>
@@ -1352,7 +1349,7 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       <div class="form-section"><label class="form-label">Kênh</label><select class="form-input" id="m-ekc-ch"><option value="ShipUS">ShipUS</option><option value="Linh Dương">Linh Dương</option><option value="Linh Thảo">Linh Thảo</option></select></div>
       <div class="form-section"><label class="form-label">Tên KH</label><input class="form-input" id="m-ekc-name" placeholder="VD: Thảo Nguyên Nguyên"></div>
       <div class="form-section"><label class="form-label">SDT</label><input class="form-input" id="m-ekc-phone" placeholder="VD: 0918288102"></div>
-      <div class="form-section"><label class="form-label">Thời gian bank</label><input class="form-input" id="m-ekc-tm" placeholder="Chọn hoặc nhập..." list="dl-m-ekc-tm" autocomplete="off"><datalist id="dl-m-ekc-tm"></datalist></div>
+      <div class="form-section"><label class="form-label">Thời gian bank</label><div class="ac-wrap"><input class="form-input" id="m-ekc-tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)"><div class="autocomplete-list" style="display:none"></div></div></div>
     </div>
     <div class="form-bottom"><button class="form-btn-cancel" onclick="closeMEditKhChar()">Hủy</button><button class="form-btn-save" onclick="saveMEditKhChar()">Lưu</button></div>
   </div>
@@ -1450,9 +1447,10 @@ function escapeHtml(s){
 function fillSelect(id, list, selected, withBlank){
   var s = document.getElementById(id); if(!s) return;
   if(s.tagName==='INPUT'){
-    var dl = document.getElementById(s.getAttribute('list')||'');
-    if(dl) dl.innerHTML = (list||[]).map(function(v){ return '<option value="'+escapeHtml(v)+'"></option>'; }).join('');
+    s._charOpts = list || [];
     if(selected!==undefined) s.value = selected || '';
+    var ac = s.parentElement && s.parentElement.querySelector('.autocomplete-list');
+    if(ac) ac.style.display = 'none';
     return;
   }
   var opts = withBlank ? ['<option value="">-- Chọn --</option>'] : [];
@@ -1463,6 +1461,32 @@ function fillSelect(id, list, selected, withBlank){
   if(selected!==undefined) s.value = selected;
 }
 
+function charOptSearch(inp){
+  var ac = inp.parentElement && inp.parentElement.querySelector('.autocomplete-list');
+  if(!ac) return;
+  var query = String(inp.value||'').trim().toLowerCase();
+  var names = (inp._charOpts||[]).filter(function(n){ return !query || String(n).toLowerCase().indexOf(query)>=0; });
+  ac.innerHTML = '';
+  if(!names.length){ ac.style.display = 'none'; return; }
+  names.forEach(function(n){
+    var item = document.createElement('div');
+    item.className = 'autocomplete-item';
+    item.textContent = n;
+    item.onmousedown = function(e){
+      e.preventDefault();
+      inp.value = n;
+      ac.style.display = 'none';
+    };
+    ac.appendChild(item);
+  });
+  ac.style.display = '';
+}
+function charOptBlur(inp){
+  setTimeout(function(){
+    var ac = inp.parentElement && inp.parentElement.querySelector('.autocomplete-list');
+    if(ac) ac.style.display = 'none';
+  }, 180);
+}
 let CFG_USERS = [];
 let KH_SUP_MAP = {};
 
@@ -4325,13 +4349,17 @@ init();
     <div class="fg">
       <div class="fr" style="margin-bottom:0">
         <label>Thời gian y/c bank</label>
-        <input id="i_s_tm" placeholder="Chọn hoặc nhập..." list="dl_i_s_tm" autocomplete="off">
-        <datalist id="dl_i_s_tm"></datalist>
+        <div class="ac-wrap">
+          <input id="i_s_tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+          <div class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
       <div class="fr" style="margin-bottom:0">
         <label>Số tiền y/c bank</label>
-        <input id="i_s_am" placeholder="Chọn hoặc nhập..." list="dl_i_s_am" autocomplete="off">
-        <datalist id="dl_i_s_am"></datalist>
+        <div class="ac-wrap">
+          <input id="i_s_am" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+          <div class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -4505,12 +4533,16 @@ init();
   <div class="fr"><label>STK</label><textarea id="ap_stk" placeholder="Ngân hàng - STK - Chủ TK - ND CK" rows="2"></textarea></div>
   <div class="fg">
     <div class="fr"><label>Thời gian y/c bank</label>
-      <input id="ap_tm" placeholder="Chọn hoặc nhập..." list="dl_ap_tm" autocomplete="off">
-      <datalist id="dl_ap_tm"></datalist>
+      <div class="ac-wrap">
+        <input id="ap_tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+        <div class="autocomplete-list" style="display:none"></div>
+      </div>
     </div>
     <div class="fr"><label>Số tiền min/Lệnh</label>
-      <input id="ap_am" placeholder="Chọn hoặc nhập..." list="dl_ap_am" autocomplete="off">
-      <datalist id="dl_ap_am"></datalist>
+      <div class="ac-wrap">
+        <input id="ap_am" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+        <div class="autocomplete-list" style="display:none"></div>
+      </div>
     </div>
   </div>
   <div class="mact">
@@ -4532,8 +4564,10 @@ init();
   <div class="fg">
     <div class="fr"><label>SDT</label><input id="ac_phone" placeholder="VD: 0918288102"/></div>
     <div class="fr"><label>Thời gian bank</label>
-      <input id="ac_tm" placeholder="Chọn hoặc nhập..." list="dl_ac_tm" autocomplete="off">
-      <datalist id="dl_ac_tm"></datalist>
+      <div class="ac-wrap">
+        <input id="ac_tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+        <div class="autocomplete-list" style="display:none"></div>
+      </div>
     </div>
   </div>
   <div class="mact">
@@ -4597,12 +4631,16 @@ init();
   <div class="fr"><label>STK</label><textarea id="ep_stk" rows="2"></textarea></div>
   <div class="fg">
     <div class="fr"><label>Thời gian y/c bank</label>
-      <input id="ep_tm" placeholder="Chọn hoặc nhập..." list="dl_ep_tm" autocomplete="off">
-      <datalist id="dl_ep_tm"></datalist>
+      <div class="ac-wrap">
+        <input id="ep_tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+        <div class="autocomplete-list" style="display:none"></div>
+      </div>
     </div>
     <div class="fr"><label>Số tiền min/Lệnh</label>
-      <input id="ep_am" placeholder="Chọn hoặc nhập..." list="dl_ep_am" autocomplete="off">
-      <datalist id="dl_ep_am"></datalist>
+      <div class="ac-wrap">
+        <input id="ep_am" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+        <div class="autocomplete-list" style="display:none"></div>
+      </div>
     </div>
   </div>
   <div class="mact">
@@ -4625,8 +4663,10 @@ init();
   <div class="fg">
     <div class="fr"><label>SDT</label><input id="ek_phone" placeholder="VD: 0918288102"/></div>
     <div class="fr"><label>Thời gian bank</label>
-      <input id="ek_tm" placeholder="Chọn hoặc nhập..." list="dl_ek_tm" autocomplete="off">
-      <datalist id="dl_ek_tm"></datalist>
+      <div class="ac-wrap">
+        <input id="ek_tm" placeholder="Chọn hoặc nhập..." autocomplete="off" oninput="charOptSearch(this)" onfocus="charOptSearch(this)" onblur="charOptBlur(this)">
+        <div class="autocomplete-list" style="display:none"></div>
+      </div>
     </div>
   </div>
   <div class="mact">
@@ -4719,15 +4759,43 @@ function escapeHtml(s){
 function fillSelect(id, list, selected, withBlank){
   const s = el(id); if(!s) return;
   if(s.tagName==='INPUT'){
-    const dl = el(s.getAttribute('list')||'');
-    if(dl) dl.innerHTML = (list||[]).map(v=>`<option value="${escapeHtml(v)}"></option>`).join('');
+    s._charOpts = list || [];
     if(selected!==undefined) s.value = selected || '';
+    const ac = s.parentElement && s.parentElement.querySelector('.autocomplete-list');
+    if(ac) ac.style.display = 'none';
     return;
   }
   const opts = (withBlank ? ['<option value="">-- Chọn --</option>'] : [])
     .concat((list||[]).map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
   s.innerHTML = opts.join('');
   if(selected!==undefined) s.value = selected;
+}
+
+function charOptSearch(inp){
+  const ac = inp.parentElement && inp.parentElement.querySelector('.autocomplete-list');
+  if(!ac) return;
+  const query = String(inp.value||'').trim().toLowerCase();
+  const names = (inp._charOpts||[]).filter(n => !query || String(n).toLowerCase().includes(query));
+  ac.innerHTML = '';
+  if(!names.length){ ac.style.display = 'none'; return; }
+  names.forEach(n => {
+    const item = document.createElement('div');
+    item.className = 'autocomplete-item';
+    item.textContent = n;
+    item.onmousedown = function(e){
+      e.preventDefault();
+      inp.value = n;
+      ac.style.display = 'none';
+    };
+    ac.appendChild(item);
+  });
+  ac.style.display = '';
+}
+function charOptBlur(inp){
+  setTimeout(function(){
+    const ac = inp.parentElement && inp.parentElement.querySelector('.autocomplete-list');
+    if(ac) ac.style.display = 'none';
+  }, 180);
 }
 
 let dpSupId = null;
