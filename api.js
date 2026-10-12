@@ -124,15 +124,78 @@ function sheetFail(e) {
   return { error: msg || 'Không đọc được file' };
 }
 
+function vnDate(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) {
+    const d = new Date();
+    return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+  }
+  return Number(m[3]) + '/' + Number(m[2]) + '/' + m[1];
+}
+
+function sheetTitle(file) {
+  return String((file && file.sheet) || 'Công nợ').replace(/'/g, "''");
+}
+
+async function sheetValuesGet(id, range) {
+  const token = await googleToken();
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueRenderOption=UNFORMATTED_VALUE';
+  return httpsRequest(url, { method: 'GET', headers: { Authorization: 'Bearer ' + token } });
+}
+
+async function sheetValuesUpdate(id, range, values) {
+  const token = await googleToken();
+  const body = JSON.stringify({ values: values });
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED';
+  return httpsRequest(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(body)
+    }
+  }, body);
+}
+
 async function readCheckerSheet(file) {
   const id = sheetIdOf(file && file.url);
   if (!id) return { error: 'Link file không phải Google Sheet' };
-  const title = String((file && file.sheet) || 'Công nợ').replace(/'/g, "''");
-  const range = "'" + title + "'!A:F";
-  const token = await googleToken();
-  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueRenderOption=UNFORMATTED_VALUE';
-  const data = await httpsRequest(url, { method: 'GET', headers: { Authorization: 'Bearer ' + token } });
+  const data = await sheetValuesGet(id, "'" + sheetTitle(file) + "'!A:F");
   return parseCongNo((data && data.values) || []);
+}
+
+async function appendCheckerPayment(file, payment) {
+  const id = sheetIdOf(file && file.url);
+  if (!id) return { error: 'Link file không phải Google Sheet' };
+  const amount = Number(payment && payment.amount);
+  if (!(amount > 0)) return { error: 'Không có số tiền thanh toán' };
+  const title = sheetTitle(file);
+  let existing;
+  try {
+    existing = await sheetValuesGet(id, "'" + title + "'!A:A");
+  } catch (e) {
+    return sheetFail(e);
+  }
+  const col = (existing && existing.values) || [];
+  let last = 2;
+  for (let i = 0; i < col.length; i++) {
+    if (col[i] && String(col[i][0] == null ? '' : col[i][0]).trim() !== '') last = i + 1;
+  }
+  const row = Math.max(last + 1, 3);
+  const formula = '=E' + (row - 1) + '+C' + row + '-D' + row;
+  const note = /^https?:\/\//i.test(payment && payment.note) ? String(payment.note) : '';
+  try {
+    await sheetValuesUpdate(id, "'" + title + "'!A" + row + ':F' + row, [[
+      vnDate(payment.date), 'Thanh toán', '', amount, formula, note
+    ]]);
+  } catch (e) {
+    const msg = (e && e.message) || '';
+    if (/403|permission|forbidden/i.test(msg)) {
+      return { error: 'Tài khoản Google của Xuka chưa có quyền sửa file này' };
+    }
+    return { error: msg || 'Không ghi được file' };
+  }
+  return { row };
 }
 
 function readBody(req, limit) {
@@ -170,6 +233,19 @@ http.createServer((req, res) => {
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ rows }));
+    }).catch(() => {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end('{"error":"invalid"}');
+    });
+    return;
+  }
+  if (route === '/api/checker-payment' && req.method === 'POST') {
+    readBody(req, 1e6).then(async (body) => {
+      let payload = {};
+      try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
+      const result = await appendCheckerPayment(payload.file, payload);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
     }).catch(() => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end('{"error":"invalid"}');
