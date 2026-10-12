@@ -3550,28 +3550,53 @@ function applyMobileRoleNav(){
   if(typeof currentScreen !== 'undefined' && !allowed.includes(currentScreen)) navTo('overview');
 }
 
+function showMobileAccessDenied(){
+  var app = document.getElementById('app');
+  if(app) app.style.display = 'none';
+  if(document.getElementById('m-auth-lock')) return;
+  var lock = document.createElement('div');
+  lock.id = 'm-auth-lock';
+  lock.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%)';
+  var card = document.createElement('div');
+  card.style.cssText = 'max-width:420px;width:100%;text-align:center;background:linear-gradient(160deg,rgba(255,255,255,0.9),rgba(255,255,255,0.7));border:1px solid rgba(255,255,255,0.9);border-radius:24px;box-shadow:0 20px 50px rgba(120,120,180,0.2);padding:32px 28px';
+  var icon = document.createElement('div');
+  icon.style.cssText = 'font-size:36px;margin-bottom:10px';
+  icon.textContent = '🔒';
+  var title = document.createElement('div');
+  title.style.cssText = 'font-size:17px;font-weight:700;color:#2a2e3a;margin-bottom:6px';
+  title.textContent = 'Không mở được Xuka';
+  var msg = document.createElement('div');
+  msg.style.cssText = 'font-size:13px;color:#797f90;line-height:1.6';
+  msg.textContent = 'Email đăng nhập không có trong danh sách tài khoản. Xuka chỉ mở khi email đó đã được thêm vào danh sách. Khi có trong danh sách, hệ thống tự nhận diện.';
+  card.appendChild(icon);
+  card.appendChild(title);
+  card.appendChild(msg);
+  lock.appendChild(card);
+  document.body.appendChild(lock);
+}
+
 async function resolveMobileIdentity(){
   let email = '';
   try{
     const r = await fetch('/platform/api/auth/session', {credentials:'include', cache:'no-store'});
-    if(r.ok){ const d = await r.json(); email = (d && d.user && d.user.username) || ''; }
+    if(r.ok){ const d = await r.json(); email = (d && d.user && (d.user.email || d.user.username)) || ''; }
   }catch(e){}
   if(!email){
     const sources = [window.AI_BASSO_USER && window.AI_BASSO_USER.email, window.BASSO_USER && window.BASSO_USER.email, window.currentUser && window.currentUser.email, new URLSearchParams(location.search).get('email')];
     email = sources.find(Boolean) || '';
   }
-  if(!email){
-    try{ email = localStorage.getItem(MOBILE_LOGIN_EMAIL_KEY) || ''; }catch(e){}
-  }
   if(email){
     const emailNorm = email.toLowerCase().trim();
-    const u = CFG_USERS.find(function(u){ return (u.user||'').toLowerCase().trim()===emailNorm; });
+    const u = CFG_USERS.find(function(u){ return (u.user||u.email||'').toLowerCase().trim()===emailNorm && u.active!==false; });
     if(u){
       mRole = u.role;
       try{ localStorage.setItem(MOBILE_LOGIN_EMAIL_KEY, emailNorm); }catch(e){}
+      applyMRoleBadge();
+      return true;
     }
   }
-  applyMRoleBadge();
+  showMobileAccessDenied();
+  return false;
 }
 
 // ============================================================
@@ -3583,7 +3608,8 @@ async function init(){
   loadData();
   CFG_USERS=loadUsers();
   KH_SUP_MAP=loadMapping();
-  await resolveMobileIdentity();
+  const identified = await resolveMobileIdentity();
+  if(!identified) return;
   let lastScreen = '';
   try{ lastScreen = localStorage.getItem(MOBILE_LAST_SCREEN_KEY) || ''; }catch(e){}
   const allowedScreens = MOBILE_ROLE_SCREENS[mRole] || MOBILE_ROLE_SCREENS.sale;
@@ -3660,10 +3686,9 @@ init();
 
 <div id="auth-lock-screen" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%)">
   <div style="max-width:420px;width:100%;text-align:center;background:linear-gradient(160deg,rgba(255,255,255,0.9),rgba(255,255,255,0.7));border:1px solid rgba(255,255,255,0.9);border-radius:24px;box-shadow:0 20px 50px rgba(120,120,180,0.2);padding:32px 28px">
-    <div style="font-size:36px;margin-bottom:10px">👋</div>
-    <div style="font-size:17px;font-weight:700;color:#2a2e3a;margin-bottom:6px">Chọn tài khoản của bạn</div>
-    <div style="font-size:13px;color:#797f90;line-height:1.6;margin-bottom:18px">Hệ thống không tự nhận diện được tài khoản đăng nhập. Vui lòng chọn tên bạn để tiếp tục — lần sau mở app sẽ tự nhớ trên máy này.</div>
-    <div id="auth-lock-picker" style="text-align:left;max-height:360px;overflow-y:auto"></div>
+    <div style="font-size:36px;margin-bottom:10px">🔒</div>
+    <div style="font-size:17px;font-weight:700;color:#2a2e3a;margin-bottom:6px">Không mở được Xuka</div>
+    <div style="font-size:13px;color:#797f90;line-height:1.6">Email đăng nhập không có trong danh sách tài khoản. Xuka chỉ mở khi email đó đã được thêm vào danh sách. Khi có trong danh sách, hệ thống tự nhận diện.</div>
   </div>
 </div>
 
@@ -4738,24 +4763,11 @@ function saveUsers(){
 function autoLoginByEmail(email){
   if(!email) return false;
   const emailNorm = email.toLowerCase().trim();
-  // Ưu tiên tên/quyền đã cấu hình trong Cài đặt > Tài khoản (có thể đã đổi tên so với mặc định)
-  const cfgIdx = CFG_USERS.findIndex(u => (u.user||'').toLowerCase().trim() === emailNorm);
-  if(cfgIdx >= 0){
-    const ok = loginAsUser(cfgIdx);
-    // Danh tính đến từ platform (đã xác thực) — không cho "Đổi tài khoản" sang người khác trên máy này
-    if(ok){ const switchLink = el('switch-account-link'); if(switchLink) switchLink.style.display = 'none'; }
-    return ok;
-  }
-  const found = EMAIL_ROLE_MAP[emailNorm];
-  if(!found) return false;
-  currentUser = found;
-  currentRole = found.role;
-  const roleSel = el('role-sel');
-  if(roleSel){ roleSel.value = found.role; roleSel.closest('.role-pill').style.display='none'; }
-  const nameDisp = el('user-name-disp');
-  if(nameDisp){ nameDisp.textContent = `👤 ${found.name}`; nameDisp.style.display=''; }
-  applyRole(true);
-  return true;
+  const cfgIdx = CFG_USERS.findIndex(u => (u.user||u.email||'').toLowerCase().trim() === emailNorm && u.active!==false);
+  if(cfgIdx < 0) return false;
+  const ok = loginAsUser(cfgIdx);
+  if(ok){ const switchLink = el('switch-account-link'); if(switchLink) switchLink.style.display = 'none'; }
+  return ok;
 }
 
 // Thử auto-login từ các nguồn platform phổ biến
@@ -4764,7 +4776,9 @@ async function tryAutoLogin(){
     const r = await fetch('/platform/api/auth/session', {credentials:'include', cache:'no-store'});
     if(r.ok){
       const d = await r.json();
-      if(d?.user?.username && autoLoginByEmail(d.user.username)) return true;
+      const sessionUser = d && d.user;
+      const sessionEmail = sessionUser && (sessionUser.email || sessionUser.username);
+      if(sessionEmail && autoLoginByEmail(sessionEmail)) return true;
     }
   }catch(e){}
   const sources = [
@@ -4792,7 +4806,7 @@ function loginAsUser(idx){
   const nameDisp = el('user-name-disp');
   if(nameDisp){ nameDisp.textContent = `👤 ${u.name}`; nameDisp.style.display=''; }
   const switchLink = el('switch-account-link');
-  if(switchLink) switchLink.style.display = '';
+  if(switchLink) switchLink.style.display = 'none';
   const roleSel = el('role-sel');
   if(roleSel){ roleSel.value = u.role; if(roleSel.closest('.role-pill')) roleSel.closest('.role-pill').style.display='none'; }
   return true;
@@ -4807,22 +4821,9 @@ function loginFromSavedEmail(){
   return idx >= 0 ? loginAsUser(idx) : false;
 }
 
-function showLoginPicker(){
+function showAccessDenied(){
   const lock = el('auth-lock-screen');
-  const picker = el('auth-lock-picker');
-  if(!lock || !picker) return;
-  const active = CFG_USERS.map((u,i)=>({u,i})).filter(x=>x.u.active!==false);
-  picker.innerHTML = active.length
-    ? active.map(({u,i})=>`<button onclick="selectLoginUser(${i})" style="display:block;width:100%;text-align:left;padding:12px 16px;margin-bottom:8px;border:1px solid rgba(120,120,180,0.25);border-radius:12px;background:rgba(255,255,255,0.75);cursor:pointer;font-size:14px;font-weight:600;color:#2a2e3a">${escapeHtml(u.name)} <span style="font-weight:400;color:#797f90;font-size:12px">(${ROLE_LABELS[u.role]||u.role})</span></button>`).join('')
-    : '<div style="font-size:13px;color:#797f90;text-align:center">Chưa có tài khoản nào được cấu hình. Liên hệ quản trị viên.</div>';
-  lock.style.display = 'flex';
-}
-
-function selectLoginUser(idx){
-  if(!loginAsUser(idx)) return;
-  const lock = el('auth-lock-screen');
-  if(lock) lock.style.display = 'none';
-  finishLogin();
+  if(lock) lock.style.display = 'flex';
 }
 
 function switchAccount(){
@@ -8679,9 +8680,9 @@ function autosave(){ saveToStorage(); }
 (async function(){
   await fetchRemoteData();
   CFG_USERS = loadUsers();
-  const loggedIn = (await tryAutoLogin()) || loginFromSavedEmail();
+  const loggedIn = await tryAutoLogin();
   if(!loggedIn){
-    showLoginPicker();
+    showAccessDenied();
     return;
   }
   finishLogin();
