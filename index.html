@@ -2215,7 +2215,13 @@ function renderTracking(){
   ];
   const cur=TABS.find(t=>t.id===ckTab)||TABS[0];
   let rows=D.ck.filter(cur.filter).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  if(ckSearch) rows=rows.filter(r=>(r.kh||'').toLowerCase().includes(ckSearch.toLowerCase())||(r.nv||'').toLowerCase().includes(ckSearch.toLowerCase()));
+  if(ckSearch){
+    const q=ckSearch.toLowerCase();
+    rows=rows.filter(function(r){
+      const who=r.payType==='Công ty CK'?{phone:''}:mKhNamePhone(D.khChars.find(function(c){return c.name===r.kh;})||{name:r.kh||''});
+      return (r.kh||'').toLowerCase().includes(q)||(r.nv||'').toLowerCase().includes(q)||(r.source||'').toLowerCase().includes(q)||who.phone.includes(q);
+    });
+  }
   const tabs=TABS.map(t=>'<button class="tab-btn '+(ckTab===t.id?'active':'')+'" onclick="setCKTab(\\''+t.id+'\\')">'+t.label+'</button>').join('');
   const list=rows.length?rows.map(r=>{
     const ckIdx=D.ck.indexOf(r);
@@ -2230,9 +2236,12 @@ function renderTracking(){
       actHtml=mActionPill('✓ Sup/Checker XN','mActionCK(\\'supxn\\','+ckIdx+')','#1f8a7a','rgba(53,196,122,0.16)');
     else if(r.status==='Đã XN & Nhập file Sup/Checker'&&actions.includes('duyet'))
       actHtml=mActionPill('✓ Duyệt','mActionCK(\\'duyet\\','+ckIdx+')','#1f8a7a','rgba(53,196,122,0.16)');
+    const isCo=r.payType==='Công ty CK';
+    const who=isCo?{name:r.source||r.kh||'Công ty',phone:''}:mKhNamePhone(D.khChars.find(function(c){return c.name===r.kh;})||{name:r.source||r.kh||''});
     return '<div class="list-row">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">'
-      +'<div><div style="font-size:14px;font-weight:600">'+(r.kh||'—')+'</div>'
+      +'<div><div style="font-size:14px;font-weight:600">'+escapeHtml(who.name||'—')+'</div>'
+      +(who.phone?'<div style="font-size:11.5px;color:#8a8fa3;margin-top:1px">'+escapeHtml(who.phone)+'</div>':'')
       +(r.idCK?'<div class="mono" style="margin-top:2px;font-size:11px">'+r.idCK+'</div>':'')
       +((r.date||r.nv)?'<div style="font-size:11px;color:#9aa0b2;margin-top:2px">'+(r.date?fmtDate(r.date):'')+(r.nv?' · NV: '+r.nv:'')+'</div>':'')
       +'</div>'+statusPill(r.status)+'</div>'
@@ -6446,7 +6455,7 @@ function rt4(){
   const actions = ROLE_TRACK_ACTIONS[currentRole] || [];
   let list = D.ck.filter(c=>
     (!st.length || st.some(s=>ckStatusMatch(c, s))) &&
-    (!q || String(c.source||c.kh||'').toLowerCase().includes(q) || String(c.receiver||'').toLowerCase().includes(q) || String(c.kh||'').toLowerCase().includes(q)) &&
+    (!q || String(c.source||c.kh||'').toLowerCase().includes(q) || String(c.receiver||'').toLowerCase().includes(q) || String(c.kh||'').toLowerCase().includes(q) || khDebtPhone(c.kh||'').includes(q)) &&
     (!nv || c.nv===nv)
   );
   list = [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
@@ -6459,7 +6468,10 @@ function rt4(){
     const partner = c.receiver ? D.partners.find(p=>p.name===c.receiver) : null;
     const receiver = c.receiver || (sup ? sup.name : '—');
     const stk = c.stk || (sup && sup.stk) || (partner && partner.stk) || '';
-    const source = c.source || (c.payType==='Công ty CK' ? (c.kh||'Công ty') : khDebtLabel(c.kh||''));
+    const isCo = c.payType==='Công ty CK';
+    const source = c.source || (isCo ? (c.kh||'Công ty') : khDebtLabel(c.kh||''));
+    const phone = isCo ? '' : khDebtPhone(c.kh||'');
+    const phoneHtml = phone ? '<div style="font-size:11.5px;font-weight:500;color:#8a8fa3;margin-top:2px">'+escapeHtml(phone)+'</div>' : '';
     const bill = c.link
       ? '<div style="display:flex;gap:6px;align-items:center"><button class="pill pill-edit" title="Xem" onclick="viewCkAt('+ckIdx+')">'+eye+'</button><button class="pill pill-edit" title="Copy" onclick="copyCkAt('+ckIdx+')">'+copyIco+'</button></div>'
       : '<span style="color:var(--txt3)">—</span>';
@@ -6474,7 +6486,7 @@ function rt4(){
     return '<tr>'
       +'<td class="nowrap">'+escapeHtml(c.date||'')+'</td>'
       +'<td class="nowrap">'+escapeHtml(c.nv||'—')+'</td>'
-      +'<td style="font-weight:600">'+escapeHtml(source||'—')+'</td>'
+      +'<td><div style="font-weight:600">'+escapeHtml(source||'—')+'</div>'+phoneHtml+'</td>'
       +'<td>'+escapeHtml(receiver||'—')+'</td>'
       +'<td>'+(stk?stkCell(stk):'<span style="color:var(--txt3)">—</span>')+'</td>'
       +'<td class="num">'+fmt(c.amount)+'</td>'
