@@ -1169,7 +1169,8 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       </div>
       <div class="form-section">
         <label class="form-label">Thời gian bank</label>
-        <select class="form-input" id="khc-tm"></select>
+        <input type="text" class="form-input" id="khc-tm" placeholder="Chọn hoặc nhập..." list="dl-khc-tm" autocomplete="off">
+        <datalist id="dl-khc-tm"></datalist>
       </div>
     </div>
     <div class="form-bottom">
@@ -1206,11 +1207,13 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       </div>
       <div class="form-section">
         <label class="form-label">Thời gian y/c bank</label>
-        <select class="form-input" id="pt-tm"></select>
+        <input type="text" class="form-input" id="pt-tm" placeholder="Chọn hoặc nhập..." list="dl-pt-tm" autocomplete="off">
+        <datalist id="dl-pt-tm"></datalist>
       </div>
       <div class="form-section">
         <label class="form-label">Số tiền min/Lệnh</label>
-        <select class="form-input" id="pt-am"></select>
+        <input type="text" class="form-input" id="pt-am" placeholder="Chọn hoặc nhập..." list="dl-pt-am" autocomplete="off">
+        <datalist id="dl-pt-am"></datalist>
       </div>
     </div>
     <div class="form-bottom">
@@ -1336,8 +1339,8 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       <div class="form-section"><label class="form-label">ID Đối tác</label><input class="form-input" id="m-ep-name" placeholder="Nhập ID đối tác..." oninput="clearPidErr('m-ep-name','m-ep-name-err')"><div id="m-ep-name-err" style="display:none;color:#e05656;font-size:12.5px;font-weight:600;margin-top:6px"></div></div>
       <div class="form-section"><label class="form-label">Loại</label><select class="form-input" id="m-ep-type"><option value="Sup">Sup</option><option value="Checker">Checker</option></select></div>
       <div class="form-section"><label class="form-label">STK</label><input class="form-input" id="m-ep-stk" placeholder="Số tài khoản..."></div>
-      <div class="form-section"><label class="form-label">Thời gian y/c bank</label><select class="form-input" id="m-ep-tm"></select></div>
-      <div class="form-section"><label class="form-label">Số tiền min/Lệnh</label><select class="form-input" id="m-ep-am"></select></div>
+      <div class="form-section"><label class="form-label">Thời gian y/c bank</label><input class="form-input" id="m-ep-tm" placeholder="Chọn hoặc nhập..." list="dl-m-ep-tm" autocomplete="off"><datalist id="dl-m-ep-tm"></datalist></div>
+      <div class="form-section"><label class="form-label">Số tiền min/Lệnh</label><input class="form-input" id="m-ep-am" placeholder="Chọn hoặc nhập..." list="dl-m-ep-am" autocomplete="off"><datalist id="dl-m-ep-am"></datalist></div>
     </div>
     <div class="form-bottom"><button class="form-btn-cancel" onclick="closeMEditPartner()">Hủy</button><button class="form-btn-save" onclick="saveMEditPartner()">Lưu</button></div>
   </div>
@@ -1349,7 +1352,7 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       <div class="form-section"><label class="form-label">Kênh</label><select class="form-input" id="m-ekc-ch"><option value="ShipUS">ShipUS</option><option value="Linh Dương">Linh Dương</option><option value="Linh Thảo">Linh Thảo</option></select></div>
       <div class="form-section"><label class="form-label">Tên KH</label><input class="form-input" id="m-ekc-name" placeholder="VD: Thảo Nguyên Nguyên"></div>
       <div class="form-section"><label class="form-label">SDT</label><input class="form-input" id="m-ekc-phone" placeholder="VD: 0918288102"></div>
-      <div class="form-section"><label class="form-label">Thời gian bank</label><select class="form-input" id="m-ekc-tm"></select></div>
+      <div class="form-section"><label class="form-label">Thời gian bank</label><input class="form-input" id="m-ekc-tm" placeholder="Chọn hoặc nhập..." list="dl-m-ekc-tm" autocomplete="off"><datalist id="dl-m-ekc-tm"></datalist></div>
     </div>
     <div class="form-bottom"><button class="form-btn-cancel" onclick="closeMEditKhChar()">Hủy</button><button class="form-btn-save" onclick="saveMEditKhChar()">Lưu</button></div>
   </div>
@@ -1446,6 +1449,12 @@ function escapeHtml(s){
 }
 function fillSelect(id, list, selected, withBlank){
   var s = document.getElementById(id); if(!s) return;
+  if(s.tagName==='INPUT'){
+    var dl = document.getElementById(s.getAttribute('list')||'');
+    if(dl) dl.innerHTML = (list||[]).map(function(v){ return '<option value="'+escapeHtml(v)+'"></option>'; }).join('');
+    if(selected!==undefined) s.value = selected || '';
+    return;
+  }
   var opts = withBlank ? ['<option value="">-- Chọn --</option>'] : [];
   (list||[]).forEach(function(v){
     opts.push('<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>');
@@ -2187,7 +2196,7 @@ function saveKhCharForm(){
   const name=document.getElementById('khc-name').value.trim();
   const phone=document.getElementById('khc-phone').value.trim();
   const ch=document.getElementById('khc-ch').value;
-  const tm=document.getElementById('khc-tm').value;
+  const tm=document.getElementById('khc-tm').value.trim();
   if(!name){alert('Vui lòng nhập tên KH');return;}
   D.khChars.push({ch,name,phone,tm,am:''});
   saveData();
@@ -2752,8 +2761,8 @@ function savePartnerForm(){
   const type=document.getElementById('pt-type').value;
   const name=document.getElementById('pt-name').value.trim();
   const stk=document.getElementById('pt-stk').value.trim();
-  const tm=document.getElementById('pt-tm').value;
-  const am=document.getElementById('pt-am').value;
+  const tm=document.getElementById('pt-tm').value.trim();
+  const am=document.getElementById('pt-am').value.trim();
   if(!name){alert('Vui lòng nhập ID Đối tác');return;}
   if(partnerIdTaken(name, -1)){ showPidErr('pt-name','pt-name-err'); return; }
   clearPidErr('pt-name','pt-name-err');
@@ -3384,8 +3393,8 @@ function saveMEditPartner(){
   p.name=name;
   p.type=document.getElementById('m-ep-type').value;
   p.stk=document.getElementById('m-ep-stk').value.trim();
-  p.tm=document.getElementById('m-ep-tm').value;
-  p.am=document.getElementById('m-ep-am').value;
+  p.tm=document.getElementById('m-ep-tm').value.trim();
+  p.am=document.getElementById('m-ep-am').value.trim();
   saveData();closeMEditPartner();renderSupList();
 }
 
@@ -3411,7 +3420,7 @@ function saveMEditKhChar(){
   const unchanged=name===shown.name && phone===shown.phone;
   if(!unchanged){ c.name=name; c.phone=phone; }
   c.ch=document.getElementById('m-ekc-ch').value;
-  c.tm=document.getElementById('m-ekc-tm').value;
+  c.tm=document.getElementById('m-ekc-tm').value.trim();
   saveData();closeMEditKhChar();renderKhList();
 }
 
@@ -4316,11 +4325,13 @@ init();
     <div class="fg">
       <div class="fr" style="margin-bottom:0">
         <label>Thời gian y/c bank</label>
-        <select id="i_s_tm"></select>
+        <input id="i_s_tm" placeholder="Chọn hoặc nhập..." list="dl_i_s_tm" autocomplete="off">
+        <datalist id="dl_i_s_tm"></datalist>
       </div>
       <div class="fr" style="margin-bottom:0">
         <label>Số tiền y/c bank</label>
-        <select id="i_s_am"></select>
+        <input id="i_s_am" placeholder="Chọn hoặc nhập..." list="dl_i_s_am" autocomplete="off">
+        <datalist id="dl_i_s_am"></datalist>
       </div>
     </div>
   </div>
@@ -4494,10 +4505,12 @@ init();
   <div class="fr"><label>STK</label><textarea id="ap_stk" placeholder="Ngân hàng - STK - Chủ TK - ND CK" rows="2"></textarea></div>
   <div class="fg">
     <div class="fr"><label>Thời gian y/c bank</label>
-      <select id="ap_tm"></select>
+      <input id="ap_tm" placeholder="Chọn hoặc nhập..." list="dl_ap_tm" autocomplete="off">
+      <datalist id="dl_ap_tm"></datalist>
     </div>
     <div class="fr"><label>Số tiền min/Lệnh</label>
-      <select id="ap_am"></select>
+      <input id="ap_am" placeholder="Chọn hoặc nhập..." list="dl_ap_am" autocomplete="off">
+      <datalist id="dl_ap_am"></datalist>
     </div>
   </div>
   <div class="mact">
@@ -4519,7 +4532,8 @@ init();
   <div class="fg">
     <div class="fr"><label>SDT</label><input id="ac_phone" placeholder="VD: 0918288102"/></div>
     <div class="fr"><label>Thời gian bank</label>
-      <select id="ac_tm"></select>
+      <input id="ac_tm" placeholder="Chọn hoặc nhập..." list="dl_ac_tm" autocomplete="off">
+      <datalist id="dl_ac_tm"></datalist>
     </div>
   </div>
   <div class="mact">
@@ -4583,10 +4597,12 @@ init();
   <div class="fr"><label>STK</label><textarea id="ep_stk" rows="2"></textarea></div>
   <div class="fg">
     <div class="fr"><label>Thời gian y/c bank</label>
-      <select id="ep_tm"></select>
+      <input id="ep_tm" placeholder="Chọn hoặc nhập..." list="dl_ep_tm" autocomplete="off">
+      <datalist id="dl_ep_tm"></datalist>
     </div>
     <div class="fr"><label>Số tiền min/Lệnh</label>
-      <select id="ep_am"></select>
+      <input id="ep_am" placeholder="Chọn hoặc nhập..." list="dl_ep_am" autocomplete="off">
+      <datalist id="dl_ep_am"></datalist>
     </div>
   </div>
   <div class="mact">
@@ -4609,7 +4625,8 @@ init();
   <div class="fg">
     <div class="fr"><label>SDT</label><input id="ek_phone" placeholder="VD: 0918288102"/></div>
     <div class="fr"><label>Thời gian bank</label>
-      <select id="ek_tm"></select>
+      <input id="ek_tm" placeholder="Chọn hoặc nhập..." list="dl_ek_tm" autocomplete="off">
+      <datalist id="dl_ek_tm"></datalist>
     </div>
   </div>
   <div class="mact">
@@ -4701,6 +4718,12 @@ function escapeHtml(s){
 }
 function fillSelect(id, list, selected, withBlank){
   const s = el(id); if(!s) return;
+  if(s.tagName==='INPUT'){
+    const dl = el(s.getAttribute('list')||'');
+    if(dl) dl.innerHTML = (list||[]).map(v=>`<option value="${escapeHtml(v)}"></option>`).join('');
+    if(selected!==undefined) s.value = selected || '';
+    return;
+  }
   const opts = (withBlank ? ['<option value="">-- Chọn --</option>'] : [])
     .concat((list||[]).map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
   s.innerHTML = opts.join('');
@@ -7490,7 +7513,7 @@ function saveEditPartner(){
   clearPidErr('ep_name','ep_name_err');
   const oldName = D.partners[i]?.name;
   D.partners[i]={type:el('ep_type').value, name,
-    stk:el('ep_stk').value.trim(), tm:el('ep_tm').value, am:el('ep_am').value};
+    stk:el('ep_stk').value.trim(), tm:el('ep_tm').value.trim(), am:el('ep_am').value.trim()};
   const newName = D.partners[i].name;
   const newStk  = D.partners[i].stk;
   // Sync name+STK to all matching D.sup entries
@@ -7521,7 +7544,7 @@ function saveEditKhChar(){
   const shown = khNamePhone(prev);
   const unchanged = name===shown.name && phone===shown.phone;
   D.khChars[i]={ch:el('ek_ch').value, name: unchanged ? prev.name : name, phone: unchanged ? (prev.phone||'') : phone,
-    tm:el('ek_tm').value, am:prev.am||'', note:prev.note||''};
+    tm:el('ek_tm').value.trim(), am:prev.am||'', note:prev.note||''};
   closeM('m-edit-kh-char'); rt5b(); autosave(); toast('✅ Đã cập nhật khách hàng');
 }
 function delPartner(i){ if(!confirm('Xoá đối tác này?')) return; D.partners.splice(i,1); rt5a(); refreshDataLists(); autosave(); }
@@ -7549,13 +7572,13 @@ function saveSup(){
   // Save to partners if new
   if(!partnerIdTaken(n, -1)){
     const isNew = el('sup_new_fields').style.display !== 'none';
-    if(isNew && (!el('i_s_tm').value || !el('i_s_am').value)){
-      toast('Vui lòng chọn Thời gian và Số tiền y/c bank cho đối tác mới', true); return;
+    if(isNew && (!el('i_s_tm').value.trim() || !el('i_s_am').value.trim())){
+      toast('Vui lòng nhập Thời gian và Số tiền y/c bank cho đối tác mới', true); return;
     }
     D.partners.push({
       type:stype, name:n, stk:el('i_ss').value,
-      tm: isNew ? el('i_s_tm').value : 'Không dí',
-      am: isNew ? el('i_s_am').value : 'Thế nào cũng ok'
+      tm: isNew ? el('i_s_tm').value.trim() : 'Không dí',
+      am: isNew ? el('i_s_am').value.trim() : 'Thế nào cũng ok'
     });
     refreshDataLists();
     toast(`✅ Đã lưu & tạo ID CK: ${newIdCK}`);
@@ -8250,7 +8273,7 @@ function savePartner(){
   if(!n){ toast('Nhập ID Đối tác', true); return; }
   if(partnerIdTaken(n, -1)){ showPidErr('ap_name','ap_name_err'); return; }
   clearPidErr('ap_name','ap_name_err');
-  D.partners.push({type:el('ap_type').value, name:n, stk:el('ap_stk').value, tm:el('ap_tm').value, am:el('ap_am').value});
+  D.partners.push({type:el('ap_type').value, name:n, stk:el('ap_stk').value, tm:el('ap_tm').value.trim(), am:el('ap_am').value.trim()});
   closeM('m-add-partner');
   ['ap_name','ap_stk'].forEach(x=>el(x).value='');
   autosave(); rt5a(); toast('✅ Đã thêm đối tác');
@@ -8266,7 +8289,7 @@ function saveKhChar(){
   const n = el('ac_name').value.trim();
   const phone = el('ac_phone').value.trim();
   if(!n){ toast('Nhập tên KH', true); return; }
-  D.khChars.push({ch:el('ac_ch').value, name:n, phone, tm:el('ac_tm').value, am:''});
+  D.khChars.push({ch:el('ac_ch').value, name:n, phone, tm:el('ac_tm').value.trim(), am:''});
   closeM('m-add-kh-char');
   ['ac_name','ac_phone'].forEach(x=>el(x).value='');
   autosave(); rt5b(); toast('✅ Đã thêm khách hàng');
