@@ -183,10 +183,9 @@ async function appendCheckerPayment(file, payment) {
   }
   const row = Math.max(last + 1, 3);
   const formula = '=E' + (row - 1) + '+C' + row + '-D' + row;
-  const note = /^https?:\/\//i.test(payment && payment.note) ? String(payment.note) : '';
   try {
-    await sheetValuesUpdate(id, "'" + title + "'!A" + row + ':F' + row, [[
-      vnDate(payment.date), 'Thanh toán', '', amount, formula, note
+    await sheetValuesUpdate(id, "'" + title + "'!A" + row + ':E' + row, [[
+      vnDate(payment.date), 'Thanh toán', '', amount, formula
     ]]);
   } catch (e) {
     const msg = (e && e.message) || '';

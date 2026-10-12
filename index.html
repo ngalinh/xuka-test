@@ -3074,11 +3074,10 @@ function mPushCheckerPayment(c){
   if(!partner || partner.type!=='Checker') return;
   var file=(D.checkerFiles||{})[name];
   if(!file || !file.url){ alert('Checker '+name+' chưa gắn file Công nợ'); return; }
-  var note=/^https?:/i.test(c.link||'') ? c.link : '';
   fetch('/api/checker-payment', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ file:file, date:c.date||'', amount:Number(c.amount)||0, note:note })
+    body: JSON.stringify({ file:file, date:c.date||'', amount:Number(c.amount)||0 })
   }).then(function(r){ return r.json(); }).then(function(d){
     if(d && d.row){
       c.sheetRow=d.row;
@@ -5928,11 +5927,10 @@ function pushCheckerPayment(c){
   if(!partner || partner.type!=='Checker') return;
   const file = checkerFileMap()[name];
   if(!file || !file.url){ toast('Checker '+name+' chưa gắn file Công nợ', true); return; }
-  const note = /^https?:/i.test(c.link||'') ? c.link : '';
   fetch('/api/checker-payment', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ file, date: c.date||today(), amount: Number(c.amount)||0, note })
+    body: JSON.stringify({ file, date: c.date||today(), amount: Number(c.amount)||0 })
   }).then(r=>r.json()).then(d=>{
     if(d && d.row){
       c.sheetRow = d.row;
