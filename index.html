@@ -1237,7 +1237,7 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       <input type="hidden" id="mgc-idx" value="">
       <div class="form-section"><label class="form-label">Ngày</label><input type="date" class="form-input" id="mgc-date"></div>
       <div class="form-section"><label class="form-label">Website</label><input type="text" class="form-input" id="mgc-web" placeholder="Website"></div>
-      <div class="form-section"><label class="form-label">Sup</label><select class="form-input" id="mgc-sup"></select></div>
+      <div class="form-section"><label class="form-label">Sup</label><div class="ac-wrap"><input type="text" class="form-input" id="mgc-sup" placeholder="Gõ để lọc Sup..." autocomplete="off" oninput="mGcSupSearch(this.value)" onfocus="mGcSupSearch(this.value)" onblur="setTimeout(function(){var a=document.getElementById('mgc-sup-ac');if(a)a.style.display='none'},180)"><div class="autocomplete-list" id="mgc-sup-ac" style="display:none"></div></div></div>
       <div class="form-section"><label class="form-label">USD</label><input type="text" inputmode="decimal" class="form-input" id="mgc-usd" placeholder="0.00" oninput="mRecalcGc()" onblur="mFmtGcUsd()"></div>
       <div class="form-section"><label class="form-label">Rate</label><input type="text" inputmode="numeric" class="form-input" id="mgc-rate" placeholder="24,000" oninput="mFmtGcRate()"></div>
       <div class="form-section"><label class="form-label">VNĐ</label><input type="text" class="form-input" id="mgc-vnd" readonly></div>
@@ -2635,9 +2635,9 @@ function openMuaGcForm(i){
   document.getElementById('mgc-idx').value=row?String(i):'';
   document.getElementById('mgc-date').value=row?(row.date||''):today();
   document.getElementById('mgc-web').value=row?(row.website||''):'';
-  var names=D.partners.filter(function(p){return p.type==='Sup';}).map(function(p){return p.name;}).filter(Boolean);
-  names=names.filter(function(n,i){return names.indexOf(n)===i;}).sort(function(a,b){return a.localeCompare(b,'vi');});
-  fillSelect('mgc-sup', names, row?row.sup:'', true);
+  document.getElementById('mgc-sup').value=row&&row.sup?row.sup:'';
+  var acSup=document.getElementById('mgc-sup-ac');
+  if(acSup) acSup.style.display='none';
   document.getElementById('mgc-usd').value=row&&row.usd!=null&&row.usd!==''?Number(row.usd).toFixed(2):'';
   document.getElementById('mgc-rate').value=row&&row.rate!=null?Math.round(Number(row.rate)||0).toLocaleString('en-US'):(24000).toLocaleString('en-US');
   var who=row?(row.who||''):((window.currentUser&&window.currentUser.name)||'');
@@ -2647,9 +2647,48 @@ function openMuaGcForm(i){
   document.getElementById('mua-gc-overlay').classList.add('open');
 }
 function closeMuaGcForm(){document.getElementById('mua-gc-overlay').classList.remove('open')}
+function mGcSupNames(){
+  var names=D.partners.filter(function(p){return p.type==='Sup';}).map(function(p){return p.name;}).filter(Boolean);
+  return names.filter(function(n,i){return names.indexOf(n)===i;}).sort(function(a,b){return a.localeCompare(b,'vi');});
+}
+function mResolveGcSup(raw){
+  var q=String(raw||'').trim().toLowerCase();
+  if(!q) return '';
+  var hit=mGcSupNames().filter(function(n){return n.toLowerCase()===q;});
+  return hit.length?hit[0]:'';
+}
+function mGcSupSearch(q){
+  var ac=document.getElementById('mgc-sup-ac');
+  if(!ac) return;
+  var query=String(q||'').trim().toLowerCase();
+  var names=mGcSupNames().filter(function(n){return !query || n.toLowerCase().indexOf(query)>=0;});
+  ac.innerHTML='';
+  if(!names.length){
+    var empty=document.createElement('div');
+    empty.className='autocomplete-item';
+    empty.style.color='#9aa0b2';
+    empty.textContent='Không thấy Sup';
+    ac.appendChild(empty);
+    ac.style.display='';
+    return;
+  }
+  names.forEach(function(n){
+    var item=document.createElement('div');
+    item.className='autocomplete-item';
+    item.textContent=n;
+    item.onmousedown=function(){ mSelectGcSup(n); };
+    ac.appendChild(item);
+  });
+  ac.style.display='';
+}
+function mSelectGcSup(name){
+  document.getElementById('mgc-sup').value=name||'';
+  var ac=document.getElementById('mgc-sup-ac');
+  if(ac) ac.style.display='none';
+}
 function mSaveGc(){
   var website=document.getElementById('mgc-web').value.trim();
-  var sup=document.getElementById('mgc-sup').value.trim();
+  var sup=mResolveGcSup(document.getElementById('mgc-sup').value);
   var usd=mGcNum(document.getElementById('mgc-usd').value);
   var rate=mGcNum(document.getElementById('mgc-rate').value);
   if(!website){alert('Nhập website');return;}
@@ -4435,7 +4474,12 @@ init();
     <div class="fr"><label>Ngày</label><input type="date" id="mg_date"/></div>
     <div class="fr"><label>Website</label><input id="mg_web" placeholder="VD: Macys"/></div>
   </div>
-  <div class="fr"><label>Sup</label><select id="mg_sup"></select></div>
+  <div class="fr"><label>Sup</label>
+    <div class="ac-wrap">
+      <input id="mg_sup" placeholder="Gõ để lọc Sup..." autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" oninput="gcSupSearch(this.value)" onfocus="gcSupSearch(this.value)" onblur="setTimeout(function(){var a=el('mg_sup_ac');if(a)a.style.display='none'},180)">
+      <div class="autocomplete-list" id="mg_sup_ac" style="display:none"></div>
+    </div>
+  </div>
   <div class="fg">
     <div class="fr"><label>USD</label><input id="mg_usd" inputmode="decimal" placeholder="0.00" oninput="recalcMuaGcVnd()" onblur="fmtMuaGcUsd()"/></div>
     <div class="fr"><label>Rate</label><input id="mg_rate" inputmode="numeric" placeholder="24,000" oninput="fmtMuaGcRate()"/></div>
@@ -6866,9 +6910,36 @@ function recalcMuaGcVnd(){
   const rate = parseGcNum(el('mg_rate').value);
   el('mg_vnd').value = usd && rate ? Math.round(usd * rate).toLocaleString('en-US') : '';
 }
+function gcSupNames(){
+  return [...new Set(D.partners.filter(p=>p.type==='Sup').map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
+}
+function resolveGcSup(raw){
+  const q = String(raw||'').trim().toLowerCase();
+  if(!q) return '';
+  return gcSupNames().find(n=>n.toLowerCase()===q) || '';
+}
+function gcSupSearch(q){
+  const ac = el('mg_sup_ac');
+  if(!ac) return;
+  const query = String(q||'').trim().toLowerCase();
+  const names = gcSupNames().filter(n=>!query || n.toLowerCase().includes(query));
+  if(!names.length){
+    ac.innerHTML = '<div class="autocomplete-empty">Không thấy Sup</div>';
+    ac.style.display = '';
+    return;
+  }
+  ac.innerHTML = names.map(n=>`<div class="autocomplete-item" onmousedown="selectGcSup('${n.replace(/'/g,"\\'")}')">${escapeHtml(n)}</div>`).join('');
+  ac.style.display = '';
+}
+function selectGcSup(name){
+  el('mg_sup').value = name;
+  const ac = el('mg_sup_ac');
+  if(ac) ac.style.display = 'none';
+}
 function fillGcSup(selected){
-  const names = [...new Set(D.partners.filter(p=>p.type==='Sup').map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
-  fillSelect('mg_sup', names, selected||'', true);
+  el('mg_sup').value = selected || '';
+  const ac = el('mg_sup_ac');
+  if(ac) ac.style.display = 'none';
 }
 function openMuaGc(i){
   const row = (i===undefined || i===null) ? null : D.muaGc[i];
@@ -6900,7 +6971,7 @@ function syncMuaGcToDebt(){
 }
 function saveMuaGc(){
   const website = el('mg_web').value.trim();
-  const sup = el('mg_sup').value.trim();
+  const sup = resolveGcSup(el('mg_sup').value);
   const usd = parseGcNum(el('mg_usd').value);
   const rate = parseGcNum(el('mg_rate').value);
   if(!website){ toast('Nhập website', true); return; }
