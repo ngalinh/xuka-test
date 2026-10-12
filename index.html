@@ -912,7 +912,6 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
   <div class="screen" id="scr-muaGc"></div>
   <div class="screen" id="scr-settingsUsers"></div>
   <div class="screen" id="scr-settingsMapping"></div>
-  <div class="screen" id="scr-settingsUpload"></div>
   <div class="screen" id="scr-settingsChar"></div>
 
   <!-- DRAWER -->
@@ -987,10 +986,6 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
             <div id="di-settingsMapping" style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('settingsMapping');closeDrawer()">
               <div style="width:32px;height:32px;border-radius:9px;background:rgba(120,120,180,0.14);color:#5b6072;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 13.5a3.5 3.5 0 0 0 5 .3l2.5-2.5a3.5 3.5 0 0 0-5-5l-1 .9"/><path d="M14.5 10.5a3.5 3.5 0 0 0-5-.3L7 12.7a3.5 3.5 0 0 0 5 5l1-.9"/></svg></div>
               <span style="flex:1;font-size:14.5px;font-weight:500">Mapping KH ↔ Sup</span>
-            </div>
-            <div id="di-settingsUpload" style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid rgba(120,120,180,0.1);cursor:pointer" onclick="navTo('settingsUpload');closeDrawer()">
-              <div style="width:32px;height:32px;border-radius:9px;background:rgba(120,120,180,0.14);color:#5b6072;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.5l2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 17v-5"/><path d="m9.7 14 2.3-2.3L14.3 14"/></svg></div>
-              <span style="flex:1;font-size:14.5px;font-weight:500">Data Upload</span>
             </div>
             <div id="di-settingsChar" style="display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer" onclick="navTo('settingsChar');closeDrawer()">
               <div style="width:32px;height:32px;border-radius:9px;background:rgba(120,120,180,0.14);color:#5b6072;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/><circle cx="19" cy="12" r="1.6"/></svg></div>
@@ -1801,7 +1796,7 @@ let selectedKenh='ShipUS';
 // ============================================================
 // NAVIGATION
 // ============================================================
-const SCREENS = ['overview','khDebt','khList','tracking','supDebt','supList','muaGc','settingsUsers','settingsMapping','settingsUpload','settingsChar'];
+const SCREENS = ['overview','khDebt','khList','tracking','supDebt','supList','muaGc','settingsUsers','settingsMapping','settingsChar'];
 const MOBILE_LAST_SCREEN_KEY = 'xuka_last_screen';
 
 function navTo(screen){
@@ -1827,7 +1822,6 @@ function renderScreen(screen){
     case 'muaGc': renderMuaGc(); break;
     case 'settingsUsers': renderSettingsUsers(); break;
     case 'settingsMapping': renderSettingsMapping(); break;
-    case 'settingsUpload': renderSettingsUpload(); break;
     case 'settingsChar': renderSettingsChar(); break;
   }
 }
@@ -2812,20 +2806,6 @@ function renderSettingsMapping(){
     +'</div>';
 }
 
-function renderSettingsUpload(){
-  const el=document.getElementById('scr-settingsUpload');
-  el.innerHTML=buildHdr({left:'menu',title:'Data Upload'})
-    +'<div class="scr-body">'
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 20px;background:linear-gradient(160deg,rgba(255,255,255,0.60),rgba(255,255,255,0.34));border:2px dashed rgba(140,150,230,0.4);border-radius:22px;cursor:pointer" onclick="triggerUpload()">'
-    +'<div style="width:56px;height:56px;border-radius:18px;background:linear-gradient(150deg,#8a9bf2,#b39bea);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 8px 20px rgba(150,140,230,0.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></div>'
-    +'<div style="font-size:14px;font-weight:600;text-align:center">Tải file sao kê / Excel</div>'
-    +'<div style="font-size:11.5px;color:#8a8fa3;text-align:center">.xlsx, .csv — tự động đối chiếu công nợ & bill CK</div>'
-    +'<button style="border:none;cursor:pointer;font-family:inherit;margin-top:2px;padding:11px 24px;border-radius:999px;background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;font-size:13px;font-weight:600;box-shadow:0 8px 18px rgba(150,140,230,0.4)">Chọn file</button>'
-    +'</div>'
-    +'<input type="file" id="upload-input" accept=".xlsx,.json" style="display:none" onchange="handleUpload(this)">'
-    +'</div>';
-}
-
 const CHAR_OPT_LABELS_M = {supTime:'Thời gian y/c bank', supAmount:'Số tiền y/c', khTime:'Thời gian bank', khAmount:'Số tiền bank'};
 function charOptCardHtml(cat, title){
   const list = D.charOptions[cat] || [];
@@ -2884,30 +2864,6 @@ function removeCharOptM(cat, idx){
   D.charOptions[cat].splice(idx,1);
   saveData();
   renderSettingsChar();
-}
-
-function triggerUpload(){document.getElementById('upload-input').click()}
-function handleUpload(input){
-  const file=input.files[0];
-  if(!file) return;
-  if(file.name.endsWith('.json')){
-    const reader=new FileReader();
-    reader.onload=e=>{
-      try{
-        const data=JSON.parse(e.target.result);
-        if(data.kh) D.kh=data.kh;
-        if(data.sup) D.sup=data.sup;
-        if(data.ck) D.ck=data.ck;
-        if(data.partners) D.partners=data.partners;
-        if(data.khChars) D.khChars=data.khChars;
-        if(data.ctr) D.ctr=data.ctr;
-        saveData();
-        alert('Đã tải dữ liệu thành công!');
-        renderScreen(currentScreen);
-      }catch(err){alert('Lỗi đọc file: '+err.message);}
-    };
-    reader.readAsText(file);
-  }
 }
 
 // ============================================================
@@ -3571,14 +3527,14 @@ function applyMRoleBadge(){
 
 // Màn hình cho phép truy cập theo vai trò — khớp với ROLE_TABS bên desktop
 const MOBILE_ROLE_SCREENS = {
-  admin: ['overview','supList','muaGc','supDebt','khList','khDebt','tracking','settingsUsers','settingsMapping','settingsUpload','settingsChar'],
+  admin: ['overview','supList','muaGc','supDebt','khList','khDebt','tracking','settingsUsers','settingsMapping','settingsChar'],
   mh:    ['overview','supList','muaGc','supDebt','tracking'],
   sale:  ['overview','khList','khDebt','tracking'],
   kt:    ['overview','tracking'],
 };
 function applyMobileRoleNav(){
   const allowed = MOBILE_ROLE_SCREENS[mRole] || MOBILE_ROLE_SCREENS.sale;
-  const allScreens = ['overview','supList','muaGc','supDebt','khList','khDebt','tracking','settingsUsers','settingsMapping','settingsUpload','settingsChar'];
+  const allScreens = ['overview','supList','muaGc','supDebt','khList','khDebt','tracking','settingsUsers','settingsMapping','settingsChar'];
   allScreens.forEach(function(scr){
     const el = document.getElementById('di-'+scr);
     if(el) el.style.display = allowed.includes(scr) ? '' : 'none';
@@ -3586,7 +3542,7 @@ function applyMobileRoleNav(){
   [
     ['mnavgrp-sup', ['supList','muaGc','supDebt']],
     ['mnavgrp-kh',  ['khList','khDebt','tracking']],
-    ['mnavgrp-cfg', ['settingsUsers','settingsMapping','settingsUpload','settingsChar']],
+    ['mnavgrp-cfg', ['settingsUsers','settingsMapping','settingsChar']],
   ].forEach(function(pair){
     const grp = document.getElementById(pair[0]);
     if(grp) grp.style.display = pair[1].some(function(s){ return allowed.includes(s); }) ? '' : 'none';
@@ -3768,7 +3724,6 @@ init();
       <div class="tab" data-tab="cfg2" onclick="go('cfg2')" style="display:none"><span class="tab-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 13.5a3.5 3.5 0 0 0 5 .3l2.5-2.5a3.5 3.5 0 0 0-5-5l-1 .9"/><path d="M14.5 10.5a3.5 3.5 0 0 0-5-.3L7 12.7a3.5 3.5 0 0 0 5 5l1-.9"/></svg></span><span class="tab-lbl">Mapping KH - Sup</span></div>
       <div class="tab" data-tab="cfg5" onclick="go('cfg5')" style="display:none"><span class="tab-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></span><span class="tab-lbl">File Công nợ Checker</span></div>
       <div class="tab" data-tab="cfg6" onclick="go('cfg6')" style="display:none"><span class="tab-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="tab-lbl">TK công ty</span></div>
-      <div class="tab" data-tab="cfg3" onclick="go('cfg3')" style="display:none"><span class="tab-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.5l2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 17v-5"/><path d="m9.7 14 2.3-2.3L14.3 14"/></svg></span><span class="tab-lbl">Data Upload</span></div>
       <div class="tab" data-tab="cfg4" onclick="go('cfg4')" style="display:none"><span class="tab-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/><circle cx="19" cy="12" r="1.6"/></svg></span><span class="tab-lbl">Đặc điểm</span></div>
     </div>
   </div>
@@ -4119,26 +4074,6 @@ init();
       <button class="btn btn-p" onclick="addCompanyBank()">Thêm</button>
     </div>
     <div id="cb-list"></div>
-  </div>
-</div>
-
-<!-- ===== CÀI ĐẶT: UPLOAD ===== -->
-<div id="cfg3" class="sec">
-  <div class="cfg-section">
-    <div class="cfg-title" style="display:flex;align-items:center;gap:10px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.5l2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 17v-5"/><path d="m9.7 14 2.3-2.3L14.3 14"/></svg>Upload dữ liệu ban đầu</div>
-    <div class="cfg-desc">Upload file Excel Danh sách đối tác để cập nhật toàn bộ danh sách Sup/Checker và KH.</div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
-      <div class="upload-card">
-        <div class="upload-icon">🏢</div>
-        <div class="upload-label">Danh sách Sup/Checker + KH</div>
-        <div class="upload-sub">File Excel có sheet "Đặc điểm SupKhách"</div>
-        <label class="btn btn-p" style="cursor:pointer;margin-top:10px">
-          Chọn file
-          <input type="file" accept=".xlsx,.xls" style="display:none" onchange="uploadPartnerFile(this)">
-        </label>
-        <div id="upload-partner-status" style="font-size:12px;color:var(--grn);margin-top:6px"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -5035,7 +4970,7 @@ const SVG_PIN    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" 
    ROLE PERMISSIONS
    ================================================ */
 const ROLE_TABS = {
-  admin: ['t0','t1','t2','t3','t4a','tgc','t4b','cfg1','cfg2','cfg5','cfg6','cfg3','cfg4'],
+  admin: ['t0','t1','t2','t3','t4a','tgc','t4b','cfg1','cfg2','cfg5','cfg6','cfg4'],
   mh:   ['t0','t1','t3','t4a','tgc'],
   sale: ['t0','t2','t3','t4b'],
   kt:   ['t0','t3']
@@ -5104,8 +5039,7 @@ const GUIDE_CONTENT = {
       '<b>Tài khoản</b>: quản lý user, gán vai trò (Admin/Sale-CSKH/Mua hàng/Kế toán).',
       '<b>Mapping KH - Sup</b>: gán Sup/Checker mặc định cho từng khách hàng.',
       '<b>File Công nợ Checker</b>: gắn link Google Sheet Công nợ cho từng checker.',
-      '<b>TK công ty</b>: lưu danh sách ngân hàng để chọn làm TK nguồn khi nhập bill Công ty CK.',
-      '<b>Data Upload</b>: nhập dữ liệu hàng loạt từ file.'
+      '<b>TK công ty</b>: lưu danh sách ngân hàng để chọn làm TK nguồn khi nhập bill Công ty CK.'
     ]},
     { title: '🛠 Công cụ khác', steps: [
       '<b>Match CK</b>: xem gợi ý tự động ghép khách hàng với đối tác Sup/Checker theo phiên.'
@@ -5272,7 +5206,7 @@ function go(id){
   el(id).classList.add('on');
   document.querySelectorAll(`.tab[data-tab="${id}"]`).forEach(t=>t.classList.add('on'));
   // Auto-open parent menu group
-  const parentMap = {t4a:'m-sup',tgc:'m-sup',t1:'m-sup',t4b:'m-kh',t2:'m-kh',cfg1:'m-cfg',cfg2:'m-cfg',cfg5:'m-cfg',cfg6:'m-cfg',cfg3:'m-cfg'};
+  const parentMap = {t4a:'m-sup',tgc:'m-sup',t1:'m-sup',t4b:'m-kh',t2:'m-kh',cfg1:'m-cfg',cfg2:'m-cfg',cfg5:'m-cfg',cfg6:'m-cfg',cfg4:'m-cfg'};
   if(parentMap[id]){
     const sub = el(parentMap[id]);
     if(sub && !sub.classList.contains('open')) sub.classList.add('open');
@@ -5282,7 +5216,6 @@ function go(id){
     cfg2:()=>{CFG_MAPPING=null; const s=el('map-filter-sup'); if(s){while(s.options.length>1)s.remove(1);} renderCfgMapping();},
     cfg5:renderCfgCheckerFiles,
     cfg6:renderCfgCompanyBanks,
-    cfg3:()=>{},
     cfg4:renderCharOpts};
   if(rend[id]) rend[id]();
   try{ localStorage.setItem(LAST_TAB_KEY, id); }catch(e){}
@@ -7484,47 +7417,6 @@ function clearAllMapping(){
 
 function uploadMappingFile(input){
   toast('⚠ Upload mapping từ Excel chưa được hỗ trợ trực tiếp trong trình duyệt. Hãy thêm thủ công hoặc liên hệ admin.', true);
-  input.value = '';
-}
-
-// ── Upload file đối tác ─────────────────────────
-function uploadPartnerFile(input){
-  const file = input.files[0]; if(!file) return;
-  const status = el('upload-partner-status');
-  status.textContent = '⏳ Đang đọc file...';
-  status.style.color = 'var(--txt2)';
-
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try {
-      // Use SheetJS if available
-      if(typeof XLSX === 'undefined'){
-        status.textContent = '❌ Chưa hỗ trợ đọc Excel trong trình duyệt. Vui lòng nhờ dev import.';
-        status.style.color = 'var(--red3)';
-        return;
-      }
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets['Đặc điểm SupKhách'];
-      if(!ws){ status.textContent = '❌ Không tìm thấy sheet "Đặc điểm SupKhách"'; status.style.color='var(--red3)'; return; }
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1});
-      const partners=[], khChars=[];
-      rows.slice(1).forEach(row=>{
-        const [t,name,tm,am,stk,,,,kc,kn,kt,ka] = row;
-        if(name) partners.push({type:String(t||'').includes('Mua')?'Checker':'Sup', name:String(name).trim(), tm:String(tm||'').trim(), am:String(am||'').trim(), stk:String(stk||'').trim()});
-        if(kn)   khChars.push({ch:String(kc||'').trim(), name:String(kn).trim(), tm:String(kt||'').trim(), am:String(ka||'').trim()});
-      });
-      D.partners = partners;
-      D.khChars  = khChars;
-      autosave(); refreshDataLists(); rt5a(); rt5b();
-      status.textContent = `✅ Đã import ${partners.length} Sup/Checker và ${khChars.length} KH`;
-      status.style.color = 'var(--grn)';
-      toast(`✅ Upload thành công: ${partners.length} Sup/Checker, ${khChars.length} KH`);
-    } catch(err){
-      status.textContent = '❌ Lỗi đọc file: ' + err.message;
-      status.style.color = 'var(--red3)';
-    }
-  };
-  reader.readAsArrayBuffer(file);
   input.value = '';
 }
 
