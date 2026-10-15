@@ -525,6 +525,19 @@ function xukaNoteServer(main) {
   try { localStorage.setItem('xuka_cn_base', JSON.stringify(main)); } catch(e){}
   window.__xukaEpoch = (window.__xukaEpoch || 0) + 1;
 }
+function repairCharOptions(opts) {
+  var src = opts || {};
+  var out = {};
+  Object.keys(src).forEach(function(k) {
+    var list = src[k];
+    if (!Array.isArray(list)) { out[k] = list; return; }
+    out[k] = list.map(function(s) {
+      if (typeof s === 'string' && s.indexOf('Min 40 tri') === 0 && s.charAt(s.length - 1) === 'u' && s.indexOf('\uFFFD') >= 0) return 'Min 40 triệu';
+      return s;
+    });
+  });
+  return out;
+}
 function xukaIndex(list, keyFn) {
   var map = {};
   (list || []).forEach(function(row) {
@@ -1732,7 +1745,7 @@ function loadData(){
     if(p.checkerOver) D.checkerOver=p.checkerOver;
     if(p.checkerFiles) D.checkerFiles=p.checkerFiles;
     if(p.khChars&&p.khChars.length) D.khChars=p.khChars;
-    D.charOptions=Object.assign({},DEFAULT_CHAR_OPTIONS,p.charOptions||{});
+    D.charOptions=Object.assign({},DEFAULT_CHAR_OPTIONS,repairCharOptions(p.charOptions||{}));
     D.lastChotPhien=p.lastChotPhien||0;
     const _mig=a=>{try{return JSON.parse(JSON.stringify(a).replaceAll('Mua hộ','Checker').replaceAll('Sup/MH','Sup/Checker'));}catch(e){return a;}};
     D.sup=_mig(D.sup);D.kh=_mig(D.kh);D.ck=_mig(D.ck);D.partners=_mig(D.partners);D.khChars=_mig(D.khChars);
@@ -3855,7 +3868,7 @@ async function pollRefresh(){
     D.ctr = main.ctr || 1;
     if(main.partners && main.partners.length) D.partners = main.partners;
     if(main.khChars  && main.khChars.length)  D.khChars  = main.khChars;
-    D.charOptions = Object.assign({}, DEFAULT_CHAR_OPTIONS, main.charOptions || {});
+    D.charOptions = Object.assign({}, DEFAULT_CHAR_OPTIONS, repairCharOptions(main.charOptions || {}));
     D.lastChotPhien = main.lastChotPhien || 0;
     try{
       var prevStore={};
@@ -5149,7 +5162,7 @@ async function pollRefresh(){
     if(main.checkerOver && typeof main.checkerOver==='object') D.checkerOver = main.checkerOver;
     if(main.checkerFiles && typeof main.checkerFiles==='object') D.checkerFiles = main.checkerFiles;
     if(Array.isArray(main.companyBanks)) D.companyBanks = main.companyBanks;
-    D.charOptions = Object.assign({}, DEFAULT_CHAR_OPTIONS, main.charOptions || {});
+    D.charOptions = Object.assign({}, DEFAULT_CHAR_OPTIONS, repairCharOptions(main.charOptions || {}));
     D.lastChotPhien = main.lastChotPhien || 0;
     try{
       const storedMain = Object.assign({}, main);
@@ -8945,7 +8958,7 @@ function loadFromStorage(){
     if(p.checkerOver && typeof p.checkerOver==='object') D.checkerOver = p.checkerOver;
     if(p.checkerFiles && typeof p.checkerFiles==='object') D.checkerFiles = p.checkerFiles;
     if(Array.isArray(p.companyBanks)) D.companyBanks = p.companyBanks;
-    D.charOptions = Object.assign({}, DEFAULT_CHAR_OPTIONS, p.charOptions || {});
+    D.charOptions = Object.assign({}, DEFAULT_CHAR_OPTIONS, repairCharOptions(p.charOptions || {}));
     D.lastChotPhien = p.lastChotPhien || 0;
     // Migrate legacy labels to new naming
     const _mig = a => { try { return JSON.parse(JSON.stringify(a).replaceAll('Mua hộ','Checker').replaceAll('Sup/MH','Sup/Checker')); } catch(e){ return a; } };
