@@ -1627,8 +1627,14 @@ function charOptSearch(inp){
     item.textContent = n;
     item.onmousedown = function(e){
       e.preventDefault();
+      inp._charPicking = true;
       inp.value = n;
-      ac.style.display = 'none';
+      function up(){
+        document.removeEventListener('mouseup', up, true);
+        inp._charPicking = false;
+        ac.style.display = 'none';
+      }
+      document.addEventListener('mouseup', up, true);
     };
     ac.appendChild(item);
   });
@@ -1636,6 +1642,7 @@ function charOptSearch(inp){
 }
 function charOptBlur(inp){
   setTimeout(function(){
+    if(inp._charPicking) return;
     var ac = inp.parentElement && inp.parentElement.querySelector('.autocomplete-list');
     if(ac) ac.style.display = 'none';
   }, 180);
@@ -4954,8 +4961,14 @@ function charOptSearch(inp){
     item.textContent = n;
     item.onmousedown = function(e){
       e.preventDefault();
+      inp._charPicking = true;
       inp.value = n;
-      ac.style.display = 'none';
+      function up(){
+        document.removeEventListener('mouseup', up, true);
+        inp._charPicking = false;
+        ac.style.display = 'none';
+      }
+      document.addEventListener('mouseup', up, true);
     };
     ac.appendChild(item);
   });
@@ -4963,6 +4976,7 @@ function charOptSearch(inp){
 }
 function charOptBlur(inp){
   setTimeout(function(){
+    if(inp._charPicking) return;
     const ac = inp.parentElement && inp.parentElement.querySelector('.autocomplete-list');
     if(ac) ac.style.display = 'none';
   }, 180);
