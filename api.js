@@ -336,6 +336,132 @@ function readBody(req, limit) {
   });
 }
 
+function hashId(s) {
+  let h = 2166136261;
+  const str = String(s);
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+
+function stampSeed(row) {
+  const copy = {};
+  Object.keys(row).sort().forEach((k) => {
+    if (k !== 'id' && k !== '_id') copy[k] = row[k];
+  });
+  return JSON.stringify(copy);
+}
+
+function stampList(list, readId, writeId, prefix) {
+  if (!Array.isArray(list)) return;
+  const seen = {};
+  list.forEach((row, i) => {
+    if (!row || typeof row !== 'object') return;
+    let id = readId(row);
+    if (!id) {
+      id = prefix + hashId(stampSeed(row) + '#' + i);
+      writeId(row, id);
+    }
+    let n = 2;
+    while (seen[id]) {
+      id = prefix + hashId(stampSeed(row) + '#' + i + '#' + n);
+      writeId(row, id);
+      n++;
+    }
+    seen[id] = 1;
+  });
+}
+
+function stampMain(main) {
+  if (!main || typeof main !== 'object') return main;
+  stampList(main.sup, (r) => r.id || r.idCK || '', (r, id) => { r.id = id; }, 'sp');
+  stampList(main.kh, (r) => r._id || '', (r, id) => { r._id = id; }, 'kh');
+  stampList(main.ck, (r) => r._id || '', (r, id) => { r._id = id; }, 'ck');
+  stampList(main.muaGc, (r) => r.id || '', (r, id) => { r.id = id; }, 'gc');
+  return main;
+}
+
+function userKey(u) {
+  return String((u && (u.user || u.email)) || '').trim().toLowerCase();
+}
+
+function applyList(list, patch, keyFn) {
+  let rows = Array.isArray(list) ? list.slice() : [];
+  const del = {};
+  (patch && patch.delete || []).forEach((id) => { if (id) del[id] = 1; });
+  if (Object.keys(del).length) {
+    rows = rows.filter((row) => {
+      const id = keyFn(row);
+      return !id || !del[id];
+    });
+  }
+  (patch && patch.upsert || []).forEach((row) => {
+    const id = keyFn(row);
+    if (!id) { rows.unshift(row); return; }
+    let idx = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (keyFn(rows[i]) === id) { idx = i; break; }
+    }
+    if (idx >= 0) rows[idx] = row;
+    else rows.unshift(row);
+  });
+  return rows;
+}
+
+function applyMap(obj, patch) {
+  const out = obj && typeof obj === 'object' && !Array.isArray(obj) ? Object.assign({}, obj) : {};
+  (patch && patch.delete || []).forEach((k) => { delete out[k]; });
+  const up = (patch && patch.upsert) || {};
+  Object.keys(up).forEach((k) => { out[k] = up[k]; });
+  return out;
+}
+
+function applyStrings(list, patch) {
+  const del = {};
+  (patch && patch.delete || []).forEach((s) => { del[String(s)] = 1; });
+  const out = (Array.isArray(list) ? list : []).filter((s) => !del[String(s)]);
+  (patch && patch.upsert || []).forEach((s) => {
+    if (out.map(String).indexOf(String(s)) < 0) out.push(s);
+  });
+  return out;
+}
+
+function applyXukaPatch(store, body) {
+  if (!store.xuka_cn_v1 || typeof store.xuka_cn_v1 !== 'object') store.xuka_cn_v1 = {};
+  const main = store.xuka_cn_v1;
+  const patch = body.xuka_patch || {};
+  stampMain(main);
+  const lists = [
+    ['sup', (r) => String((r && (r.id || r.idCK)) || '')],
+    ['kh', (r) => String((r && r._id) || '')],
+    ['ck', (r) => String((r && r._id) || '')],
+    ['muaGc', (r) => String((r && r.id) || '')],
+    ['partners', (r) => String((r && r.type) || '') + '\n' + String((r && r.name) || '')],
+    ['khChars', (r) => String((r && r.name) || '')]
+  ];
+  lists.forEach(([key, keyFn]) => {
+    if (patch[key]) main[key] = applyList(main[key], patch[key], keyFn);
+  });
+  ['checkerFiles', 'checkerBook', 'checkerOver'].forEach((key) => {
+    if (patch[key]) main[key] = applyMap(main[key], patch[key]);
+  });
+  if (patch.companyBanks) main.companyBanks = applyStrings(main.companyBanks, patch.companyBanks);
+  if (patch.charOptions) {
+    if (!main.charOptions || typeof main.charOptions !== 'object') main.charOptions = {};
+    Object.keys(patch.charOptions).forEach((k) => {
+      main.charOptions[k] = applyStrings(main.charOptions[k], patch.charOptions[k]);
+    });
+  }
+  if (patch.ctr != null) main.ctr = Math.max(Number(main.ctr) || 1, Number(patch.ctr) || 1);
+  if (patch.lastChotPhien != null) main.lastChotPhien = Math.max(Number(main.lastChotPhien) || 0, Number(patch.lastChotPhien) || 0);
+  if (patch.checkerPctSet) main.checkerPct = patch.checkerPct;
+  if (body.xuka_users_patch) store.xuka_users = applyList(store.xuka_users, body.xuka_users_patch, userKey);
+  if (body.xuka_mapping_patch) store.xuka_mapping = applyMap(store.xuka_mapping, body.xuka_mapping_patch);
+  return store;
+}
+
 http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -413,12 +539,15 @@ http.createServer((req, res) => {
         // Merge over existing top-level keys instead of blind overwrite: a client
         // that hasn't synced xuka_users/xuka_mapping/xuka_debt_reset locally yet
         // would otherwise silently wipe them (and resurrect old data) on save.
+        // xuka_patch merges each record, so two people can save different rows.
         let existing = {};
         if (fs.existsSync(DATA_FILE)) {
           try { existing = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) || {}; } catch(e) { existing = {}; }
           fs.copyFileSync(DATA_FILE, DATA_FILE + '.prev');
         }
-        const merged = Object.assign({}, existing, d);
+        if (!existing || typeof existing !== 'object') existing = {};
+        if (existing.sup !== undefined && existing.xuka_cn_v1 === undefined) existing = { xuka_cn_v1: existing };
+        const merged = d.xuka_patch ? applyXukaPatch(existing, d) : Object.assign({}, existing, d);
         // Keep last-known-good copy, then write atomically (tmp + rename) so a
         // crash mid-write can't corrupt xuka_data.json.
         const tmpFile = DATA_FILE + '.tmp';

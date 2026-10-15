@@ -478,42 +478,191 @@ function normalizeForSig(main) {
   return { sup: main.sup || [], kh: main.kh || [], ck: main.ck || [], ctr: main.ctr || 1, lastChotPhien: main.lastChotPhien || 0 };
 }
 
+function xukaHash(s) {
+  var h = 2166136261;
+  var str = String(s);
+  for (var i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+function xukaSeed(row) {
+  var copy = {};
+  Object.keys(row).sort().forEach(function(k) {
+    if (k !== 'id' && k !== '_id') copy[k] = row[k];
+  });
+  return JSON.stringify(copy);
+}
+function xukaStampList(list, readId, writeId, prefix) {
+  if (!Array.isArray(list)) return;
+  var seen = {};
+  list.forEach(function(row, i) {
+    if (!row || typeof row !== 'object') return;
+    var id = readId(row);
+    if (!id) {
+      id = prefix + xukaHash(xukaSeed(row) + '#' + i);
+      writeId(row, id);
+    }
+    var n = 2;
+    while (seen[id]) {
+      id = prefix + xukaHash(xukaSeed(row) + '#' + i + '#' + n);
+      writeId(row, id);
+      n++;
+    }
+    seen[id] = 1;
+  });
+}
+function xukaStamp(main) {
+  if (!main || typeof main !== 'object') return main;
+  xukaStampList(main.sup, function(r){ return r.id || r.idCK || ''; }, function(r, id){ r.id = id; }, 'sp');
+  xukaStampList(main.kh, function(r){ return r._id || ''; }, function(r, id){ r._id = id; }, 'kh');
+  xukaStampList(main.ck, function(r){ return r._id || ''; }, function(r, id){ r._id = id; }, 'ck');
+  xukaStampList(main.muaGc, function(r){ return r.id || ''; }, function(r, id){ r.id = id; }, 'gc');
+  return main;
+}
+function xukaNoteServer(main) {
+  try { localStorage.setItem('xuka_cn_base', JSON.stringify(main)); } catch(e){}
+  window.__xukaEpoch = (window.__xukaEpoch || 0) + 1;
+}
+function xukaIndex(list, keyFn) {
+  var map = {};
+  (list || []).forEach(function(row) {
+    if (!row) return;
+    var k = keyFn(row);
+    if (k) map[k] = row;
+  });
+  return map;
+}
+function xukaDiffList(baseList, nextList, keyFn) {
+  var base = xukaIndex(baseList, keyFn);
+  var next = xukaIndex(nextList, keyFn);
+  var upsert = [];
+  var del = [];
+  Object.keys(next).forEach(function(k) {
+    if (!base[k] || JSON.stringify(base[k]) !== JSON.stringify(next[k])) upsert.push(next[k]);
+  });
+  Object.keys(base).forEach(function(k) {
+    if (!next[k]) del.push(k);
+  });
+  return { upsert: upsert, delete: del };
+}
+function xukaDiffMap(baseObj, nextObj) {
+  var base = baseObj && typeof baseObj === 'object' ? baseObj : {};
+  var next = nextObj && typeof nextObj === 'object' ? nextObj : {};
+  var upsert = {};
+  var del = [];
+  Object.keys(next).forEach(function(k) {
+    if (JSON.stringify(base[k]) !== JSON.stringify(next[k])) upsert[k] = next[k];
+  });
+  Object.keys(base).forEach(function(k) {
+    if (!Object.prototype.hasOwnProperty.call(next, k)) del.push(k);
+  });
+  return { upsert: upsert, delete: del };
+}
+function xukaDiffStrings(baseArr, nextArr) {
+  var base = {};
+  var next = {};
+  (baseArr || []).forEach(function(s){ base[String(s)] = 1; });
+  (nextArr || []).forEach(function(s){ next[String(s)] = 1; });
+  var upsert = [];
+  var del = [];
+  Object.keys(next).forEach(function(k){ if (!base[k]) upsert.push(k); });
+  Object.keys(base).forEach(function(k){ if (!next[k]) del.push(k); });
+  return { upsert: upsert, delete: del };
+}
+function xukaChanged(part) {
+  if (!part) return false;
+  if (Array.isArray(part.upsert) && part.upsert.length) return true;
+  if (part.upsert && !Array.isArray(part.upsert) && Object.keys(part.upsert).length) return true;
+  if (part.delete && part.delete.length) return true;
+  return false;
+}
+function xukaUserKey(u) {
+  return String((u && (u.user || u.email)) || '').trim().toLowerCase();
+}
+function xukaBuildPatch(base, next) {
+  var patch = {};
+  function keep(key, part) { if (xukaChanged(part)) patch[key] = part; }
+  if (Object.prototype.hasOwnProperty.call(next, 'sup')) keep('sup', xukaDiffList(base && base.sup, next.sup, function(r){ return String(r.id || r.idCK || ''); }));
+  if (Object.prototype.hasOwnProperty.call(next, 'kh')) keep('kh', xukaDiffList(base && base.kh, next.kh, function(r){ return String(r._id || ''); }));
+  if (Object.prototype.hasOwnProperty.call(next, 'ck')) keep('ck', xukaDiffList(base && base.ck, next.ck, function(r){ return String(r._id || ''); }));
+  if (Object.prototype.hasOwnProperty.call(next, 'muaGc')) keep('muaGc', xukaDiffList(base && base.muaGc, next.muaGc, function(r){ return String(r.id || ''); }));
+  if (Object.prototype.hasOwnProperty.call(next, 'partners')) keep('partners', xukaDiffList(base && base.partners, next.partners, function(r){ return String(r.type || '') + '\n' + String(r.name || ''); }));
+  if (Object.prototype.hasOwnProperty.call(next, 'khChars')) keep('khChars', xukaDiffList(base && base.khChars, next.khChars, function(r){ return String(r.name || ''); }));
+  if (Object.prototype.hasOwnProperty.call(next, 'checkerFiles')) keep('checkerFiles', xukaDiffMap(base && base.checkerFiles, next.checkerFiles));
+  if (Object.prototype.hasOwnProperty.call(next, 'checkerBook')) keep('checkerBook', xukaDiffMap(base && base.checkerBook, next.checkerBook));
+  if (Object.prototype.hasOwnProperty.call(next, 'checkerOver')) keep('checkerOver', xukaDiffMap(base && base.checkerOver, next.checkerOver));
+  if (Object.prototype.hasOwnProperty.call(next, 'companyBanks')) keep('companyBanks', xukaDiffStrings(base && base.companyBanks, next.companyBanks));
+  if (Object.prototype.hasOwnProperty.call(next, 'charOptions')) {
+    var bc = (base && base.charOptions) || {};
+    var nc = next.charOptions || {};
+    var co = {};
+    Object.keys(nc).forEach(function(k) {
+      var part = xukaDiffStrings(bc[k], nc[k]);
+      if (xukaChanged(part)) co[k] = part;
+    });
+    if (Object.keys(co).length) patch.charOptions = co;
+  }
+  if (Object.prototype.hasOwnProperty.call(next, 'ctr')) patch.ctr = next.ctr || 1;
+  if (Object.prototype.hasOwnProperty.call(next, 'lastChotPhien')) patch.lastChotPhien = next.lastChotPhien || 0;
+  if (Object.prototype.hasOwnProperty.call(next, 'checkerPct') && (!base || Number(base.checkerPct) !== Number(next.checkerPct))) {
+    patch.checkerPct = next.checkerPct;
+    patch.checkerPctSet = true;
+  }
+  return patch;
+}
 function postToAPI(data) {
-  // Bundle all localStorage keys into one API call
-  var payload = { xuka_cn_v1: data };
-  try { var u = localStorage.getItem('xuka_users'); if (u) payload.xuka_users = JSON.parse(u); } catch(e){}
-  try { var m = localStorage.getItem('xuka_mapping'); if (m) payload.xuka_mapping = JSON.parse(m); } catch(e){}
-  try { var r = localStorage.getItem('xuka_debt_reset'); if (r) payload.xuka_debt_reset = r; } catch(e){}
-
-  var doPost = function(){
-    return fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
-    }).then(function(){
-      try { localStorage.setItem(LAST_SERVER_SIG_KEY, canonicalSig(normalizeForSig(data))); } catch(e){}
-    }).catch(function(){});
-  };
-
-  // Staleness guard: nếu server đã có thay đổi mới hơn lần đồng bộ gần nhất của máy
-  // này (do thiết bị/tab khác lưu), KHÔNG ghi đè — tránh 1 tab cũ xoá mất dữ liệu
-  // người khác vừa thêm/sửa. Chỉ kiểm tra khi đã từng biết trạng thái server trước đó.
-  var lastKnownSig = null;
-  try { lastKnownSig = localStorage.getItem(LAST_SERVER_SIG_KEY); } catch(e){}
-  if (!lastKnownSig) { doPost(); return; }
-
-  fetch(API_URL, {cache: 'no-store'}).then(function(res){
+  if (!data || typeof data !== 'object') return;
+  var epoch = window.__xukaEpoch || 0;
+  window.__xukaSaveGen = (window.__xukaSaveGen || 0) + 1;
+  var saveGen = window.__xukaSaveGen;
+  xukaStamp(data);
+  var snapshot = JSON.parse(JSON.stringify(data));
+  var base = null;
+  try { base = JSON.parse(localStorage.getItem('xuka_cn_base') || 'null'); } catch(e) {}
+  if (base) xukaStamp(base);
+  var payload = { xuka_patch: xukaBuildPatch(base, snapshot) };
+  try {
+    var usersRaw = localStorage.getItem('xuka_users');
+    if (usersRaw) {
+      var users = JSON.parse(usersRaw);
+      var usersBase = JSON.parse(localStorage.getItem('xuka_users_base') || 'null');
+      if (Array.isArray(users)) {
+        var usersPatch = xukaDiffList(Array.isArray(usersBase) ? usersBase : [], users, xukaUserKey);
+        if (xukaChanged(usersPatch)) payload.xuka_users_patch = usersPatch;
+      }
+    }
+  } catch(e) {}
+  try {
+    var mapRaw = localStorage.getItem('xuka_mapping');
+    if (mapRaw) {
+      var mapping = JSON.parse(mapRaw);
+      var mapBase = JSON.parse(localStorage.getItem('xuka_mapping_base') || 'null');
+      if (mapping && typeof mapping === 'object') {
+        var mapPatch = xukaDiffMap(mapBase && typeof mapBase === 'object' ? mapBase : {}, mapping);
+        if (xukaChanged(mapPatch)) payload.xuka_mapping_patch = mapPatch;
+      }
+    }
+  } catch(e) {}
+  fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(res){
     return res.ok ? res.json() : null;
   }).then(function(d){
-    var serverMain = d && (d.xuka_cn_v1 || d);
-    var serverSig = serverMain ? canonicalSig(normalizeForSig(serverMain)) : null;
-    if (serverSig && serverSig !== lastKnownSig) {
-      alert('Dữ liệu vừa được cập nhật ở thiết bị khác. Trang sẽ tự tải lại để tránh ghi đè mất dữ liệu — bạn thao tác lại giúp mình sau khi tải xong nhé.');
-      location.reload();
-      return;
+    if (!d || !d.ok) return;
+    if (saveGen !== window.__xukaSaveGen) return;
+    if ((window.__xukaEpoch || 0) !== epoch) return;
+    try { localStorage.setItem('xuka_cn_base', JSON.stringify(snapshot)); } catch(e){}
+    if (payload.xuka_users_patch) {
+      try { localStorage.setItem('xuka_users_base', localStorage.getItem('xuka_users')); } catch(e){}
     }
-    return doPost();
-  }).catch(function(){ doPost(); });
+    if (payload.xuka_mapping_patch) {
+      try { localStorage.setItem('xuka_mapping_base', localStorage.getItem('xuka_mapping')); } catch(e){}
+    }
+  }).catch(function(){});
 }
 
 function fetchRemoteData() {
@@ -551,17 +700,21 @@ function fetchRemoteData() {
             // KHÔNG bao giờ đẩy ngược lên (chỉ push khi user thao tác thêm/sửa/xoá
             // qua nút — autosave/saveUsers/saveMapping). Bỏ khối debt_reset cũ vì
             // nó vừa xoá sạch data vừa push lúc tải, làm mẫu/bản cũ đè bản chung.
+            xukaStamp(main);
             localStorage.setItem('xuka_cn_v1', JSON.stringify(main));
             localStorage.setItem('xuka_ver', '8');
             try { localStorage.setItem(LAST_SERVER_SIG_KEY, canonicalSig(normalizeForSig(main))); } catch(e){}
+            xukaNoteServer(main);
           }
           // Restore users
           if (d.xuka_users && Array.isArray(d.xuka_users) && d.xuka_users.length) {
             localStorage.setItem('xuka_users', JSON.stringify(d.xuka_users));
+            try { localStorage.setItem('xuka_users_base', JSON.stringify(d.xuka_users)); } catch(e){}
           }
           // Restore mapping
           if (d.xuka_mapping && typeof d.xuka_mapping === 'object') {
             localStorage.setItem('xuka_mapping', JSON.stringify(d.xuka_mapping));
+            try { localStorage.setItem('xuka_mapping_base', JSON.stringify(d.xuka_mapping)); } catch(e){}
           }
         } catch(e) {}
       });
@@ -3685,7 +3838,8 @@ async function pollRefresh(){
     if(!d || typeof d !== 'object') return;
     const main = d.xuka_cn_v1 || d;
     if(!main || !(main.sup || main.kh || main.partners)) return;
-    const sig = canonicalSig(normalizeForSig(main));
+    xukaStamp(main);
+    const sig = canonicalSig(main);
     if(sig === _pollSig) return;
     _pollSig = sig;
     D.sup = main.sup || [];
@@ -3707,6 +3861,7 @@ async function pollRefresh(){
       if(!Array.isArray(main.companyBanks) && Array.isArray(prevStore.companyBanks)) main.companyBanks=prevStore.companyBanks;
       localStorage.setItem(LS_KEY, JSON.stringify(main));
       localStorage.setItem(LAST_SERVER_SIG_KEY, sig);
+      xukaNoteServer(main);
     }catch(e){}
     renderScreen(currentScreen);
   }catch(e){}
@@ -4964,7 +5119,8 @@ async function pollRefresh(){
     if(!d || typeof d !== 'object') return;
     const main = d.xuka_cn_v1 || d;
     if(!main || !(main.sup || main.kh || main.partners)) return;
-    const sig = canonicalSig(normalizeForSig(main));
+    xukaStamp(main);
+    const sig = canonicalSig(main);
     if(sig === _pollSig) return; // không có gì thay đổi
     _pollSig = sig;
     D.sup = main.sup || [];
@@ -4991,6 +5147,7 @@ async function pollRefresh(){
       if(!Array.isArray(storedMain.companyBanks)) storedMain.companyBanks = D.companyBanks || [];
       localStorage.setItem('xuka_cn_v1', JSON.stringify(storedMain));
       localStorage.setItem(LAST_SERVER_SIG_KEY, sig);
+      xukaNoteServer(storedMain);
     }catch(e){}
     rd0(); rt1(); rt2(); rt4(); rt5a(); rt5b(); if(typeof rtGc==='function') rtGc(); if(el('cfg5')&&el('cfg5').classList.contains('on')) renderCfgCheckerFiles(); if(el('cfg6')&&el('cfg6').classList.contains('on')) renderCfgCompanyBanks(); refreshDataLists();
   }catch(e){}
