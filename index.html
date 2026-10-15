@@ -2614,7 +2614,9 @@ function renderMuaGc(){
   });
   var list=rows.length?rows.map(function(x){
     var r=x.r;
-    var st=r.status==='Y/C TT'?'<span class="pill" style="background:rgba(53,196,122,0.16);color:#2a9d63">Y/C TT</span>':'<span style="color:#9aa0b2">—</span>';
+    var st=r.status==='Y/C TT'
+      ? '<button type="button" onclick="mToggleGcStatus('+x.i+')" title="Bấm để bỏ Y/C TT" class="pill" style="cursor:pointer;border:none;background:rgba(53,196,122,0.16);color:#2a9d63">Y/C TT</button>'
+      : '<button type="button" onclick="mToggleGcStatus('+x.i+')" title="Bấm để gắn Y/C TT" class="pill" style="cursor:pointer;border:1px dashed #c5c8d4;background:transparent;color:#9aa0b2">—</button>';
     return '<div style="background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.72);border-radius:16px;box-shadow:0 5px 14px rgba(120,120,180,0.08);padding:13px 15px;margin-bottom:10px">'
       +'<div style="display:flex;align-items:flex-start;gap:8px">'
       +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">'+escapeHtml(r.website||'')+'</div>'
@@ -2768,6 +2770,20 @@ function mDelGc(i){
   if(linked && mGcLocked(linked)){ alert('Khoản này đã điều phối trên Công nợ, không xoá được'); return; }
   if(!confirm('Xoá dòng Mua GC này?')) return;
   D.muaGc.splice(i,1);
+  D.sup=D.sup.filter(function(s){return !s.gcId || mGcLocked(s);});
+  saveData();
+  renderMuaGc();
+}
+function mToggleGcStatus(i){
+  if(!Array.isArray(D.muaGc) || !D.muaGc[i]) return;
+  var row=D.muaGc[i];
+  var next=row.status==='Y/C TT'?'':'Y/C TT';
+  var linked=D.sup.find(function(x){return x.gcId===row.id;});
+  if(linked && mGcLocked(linked) && next!=='Y/C TT'){
+    alert('Khoản này đã điều phối trên Công nợ, không bỏ Y/C TT');
+    return;
+  }
+  row.status=next;
   D.sup=D.sup.filter(function(s){return !s.gcId || mGcLocked(s);});
   saveData();
   renderMuaGc();
@@ -3975,7 +3991,7 @@ init();
     <div class="search" style="max-width:260px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="fgcq" placeholder="Tìm website, Sup…" oninput="rtGc()" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true"></div>
     <button class="btn btn-p" id="btn-add-gc" onclick="openMuaGc()" style="margin-left:auto">+ Thêm dòng Mua GC</button>
   </div>
-  <div style="font-size:12.5px;color:var(--txt2);background:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.8);border-radius:12px;padding:10px 14px;margin:-6px 0 14px;line-height:1.55">Sup chọn từ Danh sách ID đối tác. Người thu điền hàng ngày và để tình trạng trống. Chỉ dòng <b>Y/C TT</b> được tạo khoản ở tab Công nợ.</div>
+  <div style="font-size:12.5px;color:var(--txt2);background:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.8);border-radius:12px;padding:10px 14px;margin:-6px 0 14px;line-height:1.55">Sup chọn từ Danh sách ID đối tác. Người thu điền hàng ngày và để tình trạng trống. Bấm cột <b>Tình trạng</b> để gắn hoặc bỏ Y/C TT. Chỉ dòng <b>Y/C TT</b> được tạo khoản ở tab Công nợ.</div>
   <div class="tw"><table><thead><tr>
     <th>Ngày</th><th>Website</th><th>Sup</th><th>USD</th><th>Rate</th><th>VNĐ</th><th>Người thu</th><th>Tình trạng</th><th></th>
   </tr></thead><tbody id="tbgc"></tbody></table></div>
@@ -7068,6 +7084,21 @@ function delMuaGc(i){
   autosave();
   rtGc(); rt1(); rd0();
 }
+function toggleMuaGcStatus(i){
+  if(!Array.isArray(D.muaGc) || !D.muaGc[i]) return;
+  const row = D.muaGc[i];
+  const next = row.status==='Y/C TT' ? '' : 'Y/C TT';
+  const linked = D.sup.find(x => x.gcId===row.id);
+  if(linked && gcDebtLocked(linked) && next!=='Y/C TT'){
+    toast('Khoản này đã điều phối trên Công nợ, không bỏ Y/C TT', true);
+    return;
+  }
+  row.status = next;
+  syncMuaGcToDebt();
+  autosave();
+  rtGc(); rt1(); rd0();
+  toast(next==='Y/C TT' ? '✅ Đã tính dòng này vào Công nợ' : 'Đã bỏ Y/C TT');
+}
 function rtGc(){
   const tb = el('tbgc'); if(!tb) return;
   if(!Array.isArray(D.muaGc)) D.muaGc = [];
@@ -7084,7 +7115,9 @@ function rtGc(){
         <td>${Number(r.rate||0).toLocaleString('en-US')}</td>
         <td style="font-weight:600">${fmt(r.vnd)}</td>
         <td>${escapeHtml(r.who||'—')}</td>
-        <td>${r.status==='Y/C TT' ? '<span class="badge b-done">Y/C TT</span>' : '<span style="color:var(--txt3)">—</span>'}</td>
+        <td>${r.status==='Y/C TT'
+          ? '<button type="button" class="badge b-done" title="Bấm để bỏ Y/C TT" onclick="toggleMuaGcStatus('+i+')" style="cursor:pointer;border:none;font:inherit">Y/C TT</button>'
+          : '<button type="button" class="badge" title="Bấm để gắn Y/C TT" onclick="toggleMuaGcStatus('+i+')" style="cursor:pointer;border:1px dashed #b7bdd0;background:transparent;color:#8b90a3;font:inherit">—</button>'}</td>
         <td style="white-space:nowrap">
           <button class="pill pill-edit" onclick="openMuaGc(${i})">${SVG_PENCIL}</button>
           <button class="pill pill-del" onclick="delMuaGc(${i})">${SVG_TRASH}</button>
