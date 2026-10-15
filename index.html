@@ -6576,16 +6576,6 @@ function execDp(){
 
     const sup = D.sup.find(s=>s.id===selId);
     if(!sup){ toast('Không tìm thấy Sup/Checker', true); return; }
-    const partner = D.partners.find(p=>p.name===sup.name);
-    const bal = partner ? partnerBalance(partner) : null;
-    if(bal){
-      const already = khAssignedName(k)===sup.name ? (k.cdAm!=null && k.cdAm!=='' ? Number(k.cdAm) : (Number(k.amount)||0)) : 0;
-      const nextIV = bal.IV - already + amount;
-      if(!(bal.isChecker && bal.over) && nextIV > bal.III){
-        toast('Vượt số chờ điều phối. Với Checker, bật Cho phép vượt trần trên tab Công nợ.', true);
-        return;
-      }
-    }
 
     // Ensure sup has an ID
     if(!sup.idCK) sup.idCK = gid(sup.type==='Sup'?'Sup':'MH');
