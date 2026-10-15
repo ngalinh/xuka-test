@@ -444,7 +444,7 @@ function applyXukaPatch(store, body) {
   lists.forEach(([key, keyFn]) => {
     if (patch[key]) main[key] = applyList(main[key], patch[key], keyFn);
   });
-  ['checkerFiles', 'checkerBook', 'checkerOver'].forEach((key) => {
+  ['checkerBook', 'checkerOver'].forEach((key) => {
     if (patch[key]) main[key] = applyMap(main[key], patch[key]);
   });
   if (patch.companyBanks) main.companyBanks = applyStrings(main.companyBanks, patch.companyBanks);
@@ -457,6 +457,15 @@ function applyXukaPatch(store, body) {
   if (patch.ctr != null) main.ctr = Math.max(Number(main.ctr) || 1, Number(patch.ctr) || 1);
   if (patch.lastChotPhien != null) main.lastChotPhien = Math.max(Number(main.lastChotPhien) || 0, Number(patch.lastChotPhien) || 0);
   if (patch.checkerPctSet) main.checkerPct = patch.checkerPct;
+  if (patch.checkerFiles) {
+    const existing = main.checkerFiles || {};
+    const linked = Object.keys(existing).filter((k) => existing[k] && existing[k].url);
+    const dels = patch.checkerFiles.delete || [];
+    const ups = patch.checkerFiles.upsert || {};
+    const wipingAll = linked.length > 1 && !Object.keys(ups).length && linked.every((k) => dels.indexOf(k) >= 0);
+    if (wipingAll) delete patch.checkerFiles;
+    else main.checkerFiles = applyMap(existing, patch.checkerFiles);
+  }
   if (body.xuka_users_patch) store.xuka_users = applyList(store.xuka_users, body.xuka_users_patch, userKey);
   if (body.xuka_mapping_patch) store.xuka_mapping = applyMap(store.xuka_mapping, body.xuka_mapping_patch);
   return store;
@@ -547,6 +556,13 @@ http.createServer((req, res) => {
         }
         if (!existing || typeof existing !== 'object') existing = {};
         if (existing.sup !== undefined && existing.xuka_cn_v1 === undefined) existing = { xuka_cn_v1: existing };
+        if (!d.xuka_patch && d.xuka_cn_v1 && existing.xuka_cn_v1) {
+          ['checkerFiles', 'muaGc', 'checkerBook', 'checkerPct', 'checkerOver', 'companyBanks'].forEach((k) => {
+            if (!Object.prototype.hasOwnProperty.call(d.xuka_cn_v1, k) && existing.xuka_cn_v1[k] != null) {
+              d.xuka_cn_v1[k] = existing.xuka_cn_v1[k];
+            }
+          });
+        }
         const merged = d.xuka_patch ? applyXukaPatch(existing, d) : Object.assign({}, existing, d);
         // Keep last-known-good copy, then write atomically (tmp + rename) so a
         // crash mid-write can't corrupt xuka_data.json.

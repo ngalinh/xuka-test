@@ -5170,7 +5170,6 @@ async function pollRefresh(){
       if(!storedMain.checkerBook) storedMain.checkerBook = D.checkerBook || {};
       if(storedMain.checkerPct==null) storedMain.checkerPct = D.checkerPct || 70;
       if(!storedMain.checkerOver) storedMain.checkerOver = D.checkerOver || {};
-      if(!storedMain.checkerFiles) storedMain.checkerFiles = D.checkerFiles || {};
       if(!Array.isArray(storedMain.companyBanks)) storedMain.companyBanks = D.companyBanks || [];
       localStorage.setItem('xuka_cn_v1', JSON.stringify(storedMain));
       localStorage.setItem(LAST_SERVER_SIG_KEY, sig);
@@ -6023,6 +6022,7 @@ function saveCheckerFile(){
   if(!D.partners.some(p=>p.type==='Checker' && p.name===name)){ toast('Checker không có trong danh sách', true); return; }
   if(url && !/^https?:\/\//i.test(url)) url = 'https://'+url;
   if(!/^https?:\/\//i.test(url)){ toast('Dán link file Google Sheet', true); return; }
+  window.__xukaFilesSeen = true;
   const map = checkerFileMap();
   if(prev && prev!==name) delete map[prev];
   map[name] = Object.assign({}, map[name]||{}, { url, sheet, pct });
@@ -6049,6 +6049,7 @@ function editCheckerFile(name){
 }
 function deleteCheckerFile(name){
   if(!confirm('Gỡ file công nợ của '+name+'?')) return;
+  window.__xukaFilesSeen = true;
   const kept = checkerFileMap()[name];
   if(kept && kept.pct) checkerFileMap()[name] = { pct: kept.pct };
   else delete checkerFileMap()[name];
@@ -8923,10 +8924,25 @@ const LS_VER = '8'; // bump to force-reset all clients
   } catch(e){}
 })();
 
+function checkerFilesForSave(){
+  const map = (D.checkerFiles && typeof D.checkerFiles==='object') ? D.checkerFiles : {};
+  const hasUrl = Object.keys(map).some(k => map[k] && map[k].url);
+  if(hasUrl || window.__xukaFilesSeen) return map;
+  return null;
+}
 function saveToStorage(){
   try {
-    const payload = { sup: D.sup, kh: D.kh, ck: D.ck, ctr: D.ctr, partners: D.partners, khChars: D.khChars, muaGc: D.muaGc||[], checkerBook: D.checkerBook||{}, checkerPct: D.checkerPct||70, checkerOver: D.checkerOver||{}, checkerFiles: D.checkerFiles||{}, companyBanks: D.companyBanks||[], charOptions: D.charOptions, lastChotPhien: D.lastChotPhien };
-    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    const payload = { sup: D.sup, kh: D.kh, ck: D.ck, ctr: D.ctr, partners: D.partners, khChars: D.khChars, muaGc: D.muaGc||[], checkerBook: D.checkerBook||{}, checkerPct: D.checkerPct||70, checkerOver: D.checkerOver||{}, companyBanks: D.companyBanks||[], charOptions: D.charOptions, lastChotPhien: D.lastChotPhien };
+    const files = checkerFilesForSave();
+    let localPayload = payload;
+    if(files) payload.checkerFiles = files;
+    else {
+      try {
+        const prev = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+        if(prev && prev.checkerFiles) localPayload = Object.assign({}, payload, { checkerFiles: prev.checkerFiles });
+      } catch(e){}
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify(localPayload));
     postToAPI(payload);
   } catch(e){ /* quota exceeded or private mode */ }
 }
