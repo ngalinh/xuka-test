@@ -112,7 +112,8 @@ function parseCongNo(rows) {
 }
 
 function sheetIdOf(url) {
-  const m = String(url || '').match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  // Also accept multi-account links: /spreadsheets/u/7/d/<id>/...
+  const m = String(url || '').match(/\/spreadsheets\/(?:u\/\d+\/)?d\/([a-zA-Z0-9-_]+)/);
   return m ? m[1] : '';
 }
 
