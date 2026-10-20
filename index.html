@@ -2501,6 +2501,7 @@ function saveCKForm(){
   const idCK=genId('CK');
   D.ck.push({nv:'',kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
   saveData();
+  mPushCheckerPayment(D.ck[D.ck.length-1]);
   closeCKForm();
   renderTracking();
 }
@@ -3253,7 +3254,7 @@ function mDelMapping(kh){
 
 // Tracking CK action
 function mPushCheckerPayment(c){
-  if(!c || c.sheetRow) return;
+  if(!c || c.sheetRow || c._sheetWriting) return;
   var name=c.partner||c.receiver||'';
   if(!name && c.idCK){
     var supRow=D.sup.find(function(x){ return x.idCK===c.idCK; });
@@ -3263,11 +3264,13 @@ function mPushCheckerPayment(c){
   if(!partner || partner.type!=='Checker') return;
   var file=(D.checkerFiles||{})[name];
   if(!file || !file.url){ alert('Checker '+name+' chưa gắn file Công nợ'); return; }
+  c._sheetWriting = true;
   fetch('/api/checker-payment', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ file:file, date:c.date||'', amount:Number(c.amount)||0 })
   }).then(function(r){ return r.json(); }).then(function(d){
+    delete c._sheetWriting;
     if(d && d.row){
       c.sheetRow=d.row;
       saveData();
@@ -3275,7 +3278,7 @@ function mPushCheckerPayment(c){
     } else {
       alert((d && d.error) || 'Không ghi được vào file checker');
     }
-  }).catch(function(){ alert('Không ghi được vào file checker'); });
+  }).catch(function(){ delete c._sheetWriting; alert('Không ghi được vào file checker'); });
 }
 function mPushThuChi(c){
   if(!c || c.thuChiRow) return;
@@ -3546,9 +3549,11 @@ function saveMBillKh(){
   const am=Number(document.getElementById('m-bk-amount').value)||0;
   if(!am){alert('Nhập số tiền đã CK');return;}
   const sup=D.sup.find(s=>s.idCK===k.idCK);
-  D.ck.unshift({date,nv:'',kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT'});
+  D.ck.unshift({date,nv:'',kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT',receiver:sup?sup.name:'',receiverType:sup?sup.type:''});
   k.status='Khách đã CK';
-  saveData();closeMBillKh();renderKhDebt();
+  saveData();
+  mPushCheckerPayment(D.ck[0]);
+  closeMBillKh();renderKhDebt();
 }
 
 // Edit CK overlay
@@ -5357,7 +5362,7 @@ const GUIDE_CONTENT = {
       'Thêm đối tác Sup/Checker mới, cập nhật STK nhận tiền mặc định, thời gian và số tiền yêu cầu bank.'
     ]},
     { title: '📋 Tracking CK', steps: [
-      'Khi đối tác Sup/Checker đã nhận được tiền vào tài khoản, bấm "Sup/Checker XN" để xác nhận → trạng thái chuyển <b>Đã XN & Nhập file Sup/Checker</b>, chờ Kế toán duyệt.'
+      'Bill CK cho Checker được ghi ngay vào file Công nợ của checker khi CSKH lưu bill. Checker tick xác nhận trên file đó. Khi thấy ô đã tick, bấm "Sup/Checker XN" → trạng thái <b>Đã XN & Nhập file Sup/Checker</b> và số tiền được tính vào Đã thanh toán.'
     ]}
   ],
   kt: [
@@ -6122,17 +6127,23 @@ function refreshLedgers(){
   return changed;
 }
 function pushCheckerPayment(c){
-  if(!c || c.sheetRow) return;
-  const name = ckPartnerName(c);
-  const partner = (D.partners||[]).find(p=>p.name===name);
+  if(!c || c.sheetRow || c._sheetWriting) return;
+  let name = ckPartnerName(c);
+  let partner = (D.partners||[]).find(p=>p.name===name);
+  if(!partner || partner.type!=='Checker'){
+    name = c.receiver || '';
+    partner = (D.partners||[]).find(p=>p.name===name);
+  }
   if(!partner || partner.type!=='Checker') return;
   const file = checkerFileMap()[name];
   if(!file || !file.url){ toast('Checker '+name+' chưa gắn file Công nợ', true); return; }
+  c._sheetWriting = true;
   fetch('/api/checker-payment', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ file, date: c.date||today(), amount: Number(c.amount)||0 })
   }).then(r=>r.json()).then(d=>{
+    delete c._sheetWriting;
     if(d && d.row){
       c.sheetRow = d.row;
       autosave();
@@ -6143,7 +6154,7 @@ function pushCheckerPayment(c){
     } else {
       toast((d && d.error) || 'Không ghi được vào file checker', true);
     }
-  }).catch(()=>toast('Không ghi được vào file checker', true));
+  }).catch(()=>{ delete c._sheetWriting; toast('Không ghi được vào file checker', true); });
 }
 function pushThuChi(c){
   if(!c || c.thuChiRow) return;
@@ -6299,6 +6310,7 @@ function saveBillImage(khId, dataUrl){
   });
   k.status = 'Khách đã CK';
   autosave(); rt2(); rt4(); rd0(); updateNoti();
+  pushCheckerPayment(D.ck[0]);
   toast('Đã lưu ảnh bill CK');
 }
 function viewKhBill(khId){
@@ -6423,7 +6435,9 @@ function saveBillFromKH(khId){
     stk: sup ? sup.stk : k.stk || '',
     link,
     amount: am,
-    status: 'Chờ XN & Đã tham chiếu HT'
+    status: 'Chờ XN & Đã tham chiếu HT',
+    receiver: sup ? sup.name : '',
+    receiverType: sup ? sup.type : ''
   });
 
   // Update KH status
@@ -6434,6 +6448,7 @@ function saveBillFromKH(khId){
   if(row) row.style.display = 'none';
 
   autosave(); rt2(); rt4(); rd0(); updateNoti();
+  pushCheckerPayment(D.ck[0]);
   toast(`✅ Đã lưu bill CK của ${k.name} → Tracking`);
 }
 
@@ -8189,6 +8204,7 @@ function saveCK(){
   closeM('mck');
   refreshNvFilters();
   autosave(); rd0(); rt4(); rt2(); updateNoti();
+  pushCheckerPayment(D.ck[0]);
   toast('Đã lưu bill. Giao dịch hiện ở Tracking CK.');
 }
 
