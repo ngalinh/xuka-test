@@ -1865,6 +1865,16 @@ function starRating(n){
   n = Math.max(0, Math.min(3, n));
   return '<span style="color:#f0b429">'+'★'.repeat(n)+'</span><span style="color:#d5d8e3">'+'☆'.repeat(3-n)+'</span>';
 }
+function mKhDispatched(k){
+  if(k.status==='Chờ khách CK') return true;
+  if(k.status!=='Khách đã CK') return false;
+  var bills=D.ck.filter(function(c){ return c.idCK&&c.idCK===k.idCK&&c.kh===k.name; });
+  var paid=bills.some(function(c){
+    return c.status==='Đã XN & Nhập file Sup/Checker'||c.status==='Sup/Checker XN'||c.status==='Done & Nhập Thu Chi'||c.status==='Done';
+  });
+  if(paid) return false;
+  return bills.some(function(c){ return String(c.status||'').indexOf('Chờ XN')>=0; });
+}
 function mLedgerRoom(name){
   var p = D.partners.find(function(x){ return x.name===name; });
   if(!p) return 0;
@@ -1882,7 +1892,7 @@ function mLedgerRoom(name){
   var I = isChecker ? (Number(book.gross)||0) : gc;
   var III = I - paid;
   var IV = D.kh.filter(function(k){
-    if(k.status!=='Chờ khách CK' && k.status!=='Khách đã CK') return false;
+    if(!mKhDispatched(k)) return false;
     var s = k.idCK ? D.sup.find(function(x){ return x.idCK===k.idCK; }) : null;
     return s && s.name===name;
   }).reduce(function(a,k){ return a+(k.cdAm!=null && k.cdAm!=='' ? Number(k.cdAm) : (Number(k.amount)||0)); },0);
@@ -4084,7 +4094,7 @@ init();
     <input type="hidden" id="f1t" value="">
     <button class="btn btn-p" id="btn-add-sup" onclick="openM('msup')" style="display:none;margin-left:auto">+ Nhập công nợ</button>
   </div>
-  <div style="font-size:12.5px;color:var(--txt2);margin:-6px 0 14px;line-height:1.5">Sup: (I) là tổng Mua GC đã Y/C TT, (III) = (I) − (II). Checker đã gắn file: (I) là tổng cột Công nợ, (III) là cột Còn lại trên sheet nhân tỷ lệ riêng của checker đó, mặc định 70%. (II) cả hai lấy bill Tracking đã Sup/Checker XN hoặc Done. (IV) là tiền KH đã gán. (V) = (III) − (IV).</div>
+  <div style="font-size:12.5px;color:var(--txt2);margin:-6px 0 14px;line-height:1.5">Sup: (I) là tổng Mua GC đã Y/C TT, (III) = (I) − (II). Checker đã gắn file: (I) là tổng cột Công nợ, (III) là cột Còn lại trên sheet nhân tỷ lệ riêng của checker đó, mặc định 70%. (II) cả hai lấy bill Tracking đã Sup/Checker XN hoặc Done. (IV) là số tiền chỉ định của KH đang Chờ khách CK, hoặc Khách đã CK mà bill còn Chờ XN. (V) = (III) − (IV).</div>
   <div class="tw"><table>
     <thead><tr>
     <th>STT</th><th>Loại</th><th>Tên đối tác</th><th>Tổng giao dịch (I)</th><th>Đã thanh toán (II)</th><th>Công nợ (III)</th><th>Đã điều phối (IV)</th><th>Chờ điều phối (V)</th>
@@ -5886,6 +5896,13 @@ function ckPartnerName(c){
   const s = c.idCK ? D.sup.find(x=>x.idCK===c.idCK) : null;
   return s ? s.name : (c.partner||'');
 }
+function khCountsDispatched(k){
+  if(k.status==='Chờ khách CK') return true;
+  if(k.status!=='Khách đã CK') return false;
+  const bills = D.ck.filter(c=>c.idCK && c.idCK===k.idCK && c.kh===k.name);
+  if(bills.some(c=>debtPaid(c.status))) return false;
+  return bills.some(c=>String(c.status||'').includes('Chờ XN'));
+}
 function khAssignedName(k){
   const s = k.idCK ? D.sup.find(x=>x.idCK===k.idCK) : null;
   return s ? s.name : '';
@@ -5903,7 +5920,7 @@ function partnerBalance(p){
   const remain = book.remain==null || book.remain==='' ? null : Number(book.remain);
   const fileIII = fromSheet && live.III!=null ? Number(live.III) : (I - II);
   const III = isChecker ? Math.round(fileIII * pct / 100) : fileIII;
-  const IV = D.kh.filter(k=>(k.status==='Chờ khách CK'||k.status==='Khách đã CK') && khAssignedName(k)===p.name)
+  const IV = D.kh.filter(k=>khCountsDispatched(k) && khAssignedName(k)===p.name)
     .reduce((a,k)=>a+(k.cdAm!=null && k.cdAm!=='' ? Number(k.cdAm) : (Number(k.amount)||0)),0);
   return { p, I, II, III, IV, V: III-IV, pct, gross: book.gross, remain, over: !!((D.checkerOver||{})[p.name]), isChecker, fromSheet, sheetError: live && live.error ? String(live.error) : '' };
 }
