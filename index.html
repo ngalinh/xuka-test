@@ -1995,6 +1995,7 @@ let searchVisible={khDebt:false,khList:false,ckTrack:false};
 let khSearch='';
 let khListSearch='';
 let mRole='admin';
+let mUserName='';
 let ckSearch='';
 let khListFilter='all';
 let selectedKenh='ShipUS';
@@ -2499,7 +2500,7 @@ function saveCKForm(){
   const link=document.getElementById('ck-link').value.trim();
   if(!kh){alert('Vui lòng nhập tên KH');return;}
   const idCK=genId('CK');
-  D.ck.push({nv:'',kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
+  D.ck.push({nv:mUserName,kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
   saveData();
   mPushCheckerPayment(D.ck[D.ck.length-1]);
   closeCKForm();
@@ -3549,7 +3550,7 @@ function saveMBillKh(){
   const am=Number(document.getElementById('m-bk-amount').value)||0;
   if(!am){alert('Nhập số tiền đã CK');return;}
   const sup=D.sup.find(s=>s.idCK===k.idCK);
-  D.ck.unshift({date,nv:'',kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT',receiver:sup?sup.name:'',receiverType:sup?sup.type:''});
+  D.ck.unshift({date,nv:mUserName,kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT',receiver:sup?sup.name:'',receiverType:sup?sup.type:''});
   k.status='Khách đã CK';
   saveData();
   mPushCheckerPayment(D.ck[0]);
@@ -3816,6 +3817,7 @@ async function resolveMobileIdentity(){
     const u = CFG_USERS.find(function(u){ return (u.user||u.email||'').toLowerCase().trim()===emailNorm && u.active!==false; });
     if(u){
       mRole = u.role;
+      mUserName = u.name || '';
       try{ localStorage.setItem(MOBILE_LOGIN_EMAIL_KEY, emailNorm); }catch(e){}
       applyMRoleBadge();
       return true;
