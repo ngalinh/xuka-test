@@ -2499,8 +2499,9 @@ function saveCKForm(){
   const amount=Number(document.getElementById('ck-amount').value)||0;
   const link=document.getElementById('ck-link').value.trim();
   if(!kh){alert('Vui lòng nhập tên KH');return;}
+  const khRow=D.kh.find(function(k){ return k.name===kh && k.nv && k.status!=='Done' && k.status!=='Cancelled'; }) || D.kh.find(function(k){ return k.name===kh && k.nv; });
   const idCK=genId('CK');
-  D.ck.push({nv:mUserName,kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
+  D.ck.push({nv:(khRow&&khRow.nv)||mUserName,kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
   saveData();
   mPushCheckerPayment(D.ck[D.ck.length-1]);
   closeCKForm();
@@ -3550,7 +3551,7 @@ function saveMBillKh(){
   const am=Number(document.getElementById('m-bk-amount').value)||0;
   if(!am){alert('Nhập số tiền đã CK');return;}
   const sup=D.sup.find(s=>s.idCK===k.idCK);
-  D.ck.unshift({date,nv:mUserName,kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT',receiver:sup?sup.name:'',receiverType:sup?sup.type:''});
+  D.ck.unshift({date,nv:(k.nv||mUserName),kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT',receiver:sup?sup.name:'',receiverType:sup?sup.type:''});
   k.status='Khách đã CK';
   saveData();
   mPushCheckerPayment(D.ck[0]);
@@ -6424,7 +6425,7 @@ function saveBillFromKH(khId){
 
   if(!am){ toast('Nhập số tiền đã CK', true); return; }
 
-  const nvDisplay = currentUser ? currentUser.name : k.nv || '';
+  const nvDisplay = k.nv || (currentUser ? currentUser.name : '');
 
   const sup = D.sup.find(s=>s.idCK===k.idCK);
 
@@ -8074,6 +8075,7 @@ function onCkSourceChange(){
   if(!row){ el('i_cid').value=''; return; }
   const sup = D.sup.find(s=>s.idCK===row.idCK);
   el('i_cid').value = row.idCK || '';
+  if(row.nv) el('i_cnv').value = row.nv;
   if(sup) el('i_crecv').value = sup.name;
   const am = row.cdAm || row.amount || 0;
   if(am) el('i_cam').value = fmtInput(am);
@@ -8177,7 +8179,7 @@ function saveCK(){
   const link = el('i_clink').value.trim();
   if(!link){ toast('Chọn ảnh bill CK', true); return; }
   if(!am){ toast('Nhập số tiền', true); return; }
-  let source = '', kh = '', receiver = '', idCK = '';
+  let source = '', kh = '', receiver = '', idCK = '', staffRow = null;
   if(kind==='Công ty CK'){
     source = el('i_csrc').value.trim();
     receiver = el('i_crecv_co').value;
@@ -8188,14 +8190,14 @@ function saveCK(){
     idCK = el('i_cid').value;
     if(!kh || !receiver){ toast('Chọn TK nguồn và TK nhận', true); return; }
     source = khDebtLabel(kh);
-    const row = D.kh.find(k=>k.name===kh && k.idCK===idCK);
-    if(!idCK && row) idCK = row.idCK;
+    staffRow = D.kh.find(k=>k.name===kh && k.idCK===idCK) || D.kh.find(k=>k.name===kh && k.idCK && !['Done','Cancelled'].includes(k.status));
+    if(!idCK && staffRow) idCK = staffRow.idCK;
   }
   const partner = D.partners.find(p=>p.name===receiver);
   const sup = idCK ? D.sup.find(s=>s.idCK===idCK) : null;
   D.ck.unshift({
     date: el('i_cd').value || today(),
-    nv: el('i_cnv').value || (currentUser?.name||''),
+    nv: (staffRow && staffRow.nv) || el('i_cnv').value || (currentUser?.name||''),
     kh, source, payType: kind, receiver,
     receiverType: partner ? partner.type : (sup ? sup.type : ''),
     idCK, stk: (sup && sup.stk) || (partner ? partner.stk : ''),
