@@ -8124,7 +8124,7 @@ function applyCkBillFile(file){
 function readCkBill(src){
   if(!src) return;
   toast('Đang đọc ngày và số tiền trên bill...');
-  fetch('/api/read-bill', {
+  fetch(new URL('read-bill', window.location.href).href, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ image: src })

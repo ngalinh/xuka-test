@@ -2,5 +2,6 @@
 .local-data/
 .env
 .env.*
+!.env.example
 credentials.json
 *service-account*.json

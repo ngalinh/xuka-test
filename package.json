@@ -1,7 +1,7 @@
 {
   "name": "xuka-congno",
   "scripts": {
-    "start": "npx serve . -p $PORT"
+    "start": "node server.js"
   },
   "dependencies": {
     "serve": "^14.0.0"
