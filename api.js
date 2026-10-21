@@ -183,6 +183,8 @@ async function appendCheckerPayment(file, payment) {
     if (col[i] && String(col[i][0] == null ? '' : col[i][0]).trim() !== '') last = i + 1;
   }
   const row = Math.max(last + 1, 3);
+  const rawNote = String((payment && (payment.link || payment.note)) || '').trim();
+  const note = /^https?:\/\//i.test(rawNote) ? rawNote : '';
   try {
     await sheetValuesUpdate(id, "'" + title + "'!A" + row + ':D' + row, [[
       vnDate(payment.date), 'Thanh toán', '', amount
@@ -193,6 +195,12 @@ async function appendCheckerPayment(file, payment) {
       return { error: 'Tài khoản Google của Xuka chưa có quyền sửa file này' };
     }
     return { error: msg || 'Không ghi được file' };
+  }
+  if (!note) return { row };
+  try {
+    await sheetValuesUpdate(id, "'" + title + "'!F" + row, [[note]]);
+  } catch (e) {
+    return { row, noteError: 'Đã ghi số tiền nhưng chưa ghi được link vào cột Ghi chú' };
   }
   return { row };
 }

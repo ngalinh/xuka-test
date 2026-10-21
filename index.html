@@ -1298,7 +1298,7 @@ input[type="date"].form-input{-webkit-appearance:none;appearance:none;line-heigh
       </div>
       <div class="form-section">
         <label class="form-label">Link / Ghi chú</label>
-        <input type="text" class="form-input" id="ck-link" placeholder="Link bill hoặc ghi chú...">
+        <input type="text" class="form-input" id="ck-link" placeholder="https://prnt.sc/...">
       </div>
     </div>
     <div class="form-bottom">
@@ -2509,6 +2509,7 @@ function saveCKForm(){
   const amount=Number(document.getElementById('ck-amount').value)||0;
   const link=document.getElementById('ck-link').value.trim();
   if(!kh){alert('Vui lòng nhập tên KH');return;}
+  if(!/^https?:\\/\\//i.test(link)){alert('Nhập link ảnh bill bắt đầu bằng http');return;}
   const khRow=D.kh.find(function(k){ return k.name===kh && k.nv && k.status!=='Done' && k.status!=='Cancelled'; }) || D.kh.find(function(k){ return k.name===kh && k.nv; });
   const idCK=genId('CK');
   D.ck.push({nv:(khRow&&khRow.nv)||mUserName,kh,idCK,date,partner,amount,status:'Chờ XN & Đã tham chiếu HT',link});
@@ -3280,13 +3281,13 @@ function mPushCheckerPayment(c){
   fetch('/api/checker-payment', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ file:file, date:c.date||'', amount:Number(c.amount)||0 })
+    body: JSON.stringify({ file:file, date:c.date||'', amount:Number(c.amount)||0, link:c.link||'' })
   }).then(function(r){ return r.json(); }).then(function(d){
     delete c._sheetWriting;
     if(d && d.row){
       c.sheetRow=d.row;
       saveData();
-      alert('Đã ghi dòng Thanh toán vào file '+name);
+      alert(d.noteError || ('Đã ghi dòng Thanh toán và link ảnh vào file '+name));
     } else {
       alert((d && d.error) || 'Không ghi được vào file checker');
     }
@@ -3559,6 +3560,7 @@ function saveMBillKh(){
   const date=document.getElementById('m-bk-date').value||today();
   const link=document.getElementById('m-bk-link').value.trim();
   const am=Number(document.getElementById('m-bk-amount').value)||0;
+  if(!/^https?:\\/\\//i.test(link)){alert('Nhập link ảnh bill bắt đầu bằng http');return;}
   if(!am){alert('Nhập số tiền đã CK');return;}
   const sup=D.sup.find(s=>s.idCK===k.idCK);
   D.ck.unshift({date,nv:(k.nv||mUserName),kh:k.name,idCK:k.idCK,stk:sup?sup.stk:'',link,amount:am,status:'Chờ XN & Đã tham chiếu HT',receiver:sup?sup.name:'',receiverType:sup?sup.type:''});
@@ -4612,7 +4614,6 @@ init();
   <h2>Nhập bill CK</h2>
   <input type="hidden" id="i_cd"/>
   <input type="hidden" id="i_cid" value=""/>
-  <input type="hidden" id="i_clink" value=""/>
   <div id="cid_info" style="display:none"></div>
   <div class="fg">
     <div class="fr"><label>Ngày</label><input id="i_cd_show" type="date" oninput="el('i_cd').value=this.value"/></div>
@@ -4633,21 +4634,27 @@ init();
     <div style="font-size:12px;color:var(--txt2);margin-top:-6px">Danh sách TK nằm ở Cài đặt → TK công ty.</div>
     <div class="fr"><label>TK nhận</label><select id="i_crecv_co"><option value="">-- Chọn Sup/Checker --</option></select></div>
   </div>
-  <div class="fr"><label>Ảnh bill CK</label>
-    <div id="ck-bill-drop" tabindex="0" style="border:1px dashed var(--brd2);border-radius:12px;padding:12px;background:var(--bg2)">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="file" id="i_cfile" accept="image/*" onchange="readCkFile(this)"/>
-        <button type="button" class="btn btn-sm" onclick="pasteCkBillClipboard()">Dán từ clipboard</button>
-      </div>
-      <div style="font-size:12px;color:var(--txt2);margin-top:8px">Kéo thả ảnh vào khung này, bấm Ctrl+V, hoặc bấm Dán từ clipboard.</div>
-      <img id="i_cpreview" alt="" style="display:none;margin-top:10px;max-width:100%;max-height:180px;border-radius:8px">
-    </div>
-  </div>
+  <div class="fr"><label>Link ảnh bill</label><input id="i_clink" placeholder="https://prnt.sc/..."/></div>
   <div class="fr"><label>Số tiền (VNĐ)</label><input type="text" id="i_cam" placeholder="Số tiền" oninput="formatCurrencyInput(this)"/></div>
-  <div style="font-size:12px;color:var(--txt2);margin-top:-6px">Dán, kéo thả hoặc chọn ảnh bill, app đọc ngày và số tiền. Sửa lại nếu đọc lệch. Ảnh lưu trong app và tự xóa sau 3 tháng.</div>
+  <div style="font-size:12px;color:var(--txt2);margin-top:-6px">Dán link ảnh bill. Với checker, link này được ghi vào cột Ghi chú trên file Công nợ.</div>
   <div class="mact">
     <button class="btn" onclick="closeM('mck')">Hủy</button>
     <button class="btn btn-p" onclick="saveCK()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Lưu bill</button>
+  </div>
+</div>
+</div>
+
+<div class="modbg" id="m-kh-bill">
+<div class="mod">
+  <button class="xbtn" onclick="closeM('m-kh-bill')">×</button>
+  <h2>Nhập link bill CK</h2>
+  <div class="fr"><label>Ngày CK</label><input id="khb-date" type="date"/></div>
+  <div class="fr"><label>Link ảnh bill</label><input id="khb-link" placeholder="https://prnt.sc/..."/></div>
+  <div class="fr"><label>Số tiền đã CK (VNĐ)</label><input id="khb-am" placeholder="Số tiền" oninput="formatCurrencyInput(this)"/></div>
+  <div style="font-size:12px;color:var(--txt2);margin-top:-6px">Với checker, link này được ghi vào cột Ghi chú trên file Công nợ.</div>
+  <div class="mact">
+    <button class="btn" onclick="closeM('m-kh-bill')">Hủy</button>
+    <button class="btn btn-p" onclick="saveBillFromKH()">Lưu bill</button>
   </div>
 </div>
 </div>
@@ -5375,7 +5382,7 @@ const GUIDE_CONTENT = {
       'Thêm đối tác Sup/Checker mới, cập nhật STK nhận tiền mặc định, thời gian và số tiền yêu cầu bank.'
     ]},
     { title: '📋 Tracking CK', steps: [
-      'Bill CK cho Checker được ghi ngay vào file Công nợ của checker khi CSKH lưu bill. Checker tick xác nhận trên file đó. Khi thấy ô đã tick, bấm "Sup/Checker XN" → trạng thái <b>Đã XN & Nhập file Sup/Checker</b> và số tiền được tính vào Đã thanh toán.'
+      'Bill CK cho Checker được ghi ngay vào file Công nợ của checker khi CSKH lưu bill. Link ảnh nằm ở cột Ghi chú. Checker tick xác nhận trên file đó. Khi thấy ô đã tick, bấm "Sup/Checker XN" → trạng thái <b>Đã XN & Nhập file Sup/Checker</b> và số tiền được tính vào Đã thanh toán.'
     ]}
   ],
   kt: [
@@ -5457,6 +5464,9 @@ function idbBadge(id){
 }
 function copyText(t){
   navigator.clipboard && navigator.clipboard.writeText(t).then(()=>toast('✅ Đã copy: '+t));
+}
+function isBillLink(link){
+  return /^https?:\/\//i.test(String(link||'').trim());
 }
 function copyBillImage(src){
   if(!src){ toast('Chưa có ảnh bill', true); return; }
@@ -6161,7 +6171,7 @@ function pushCheckerPayment(c){
   fetch('/api/checker-payment', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ file, date: c.date||today(), amount: Number(c.amount)||0 })
+    body: JSON.stringify({ file, date: c.date||today(), amount: Number(c.amount)||0, link: c.link||'' })
   }).then(r=>r.json()).then(d=>{
     delete c._sheetWriting;
     if(d && d.row){
@@ -6170,7 +6180,7 @@ function pushCheckerPayment(c){
       refreshCheckerSheets.sig = '';
       refreshCheckerSheets.at = 0;
       refreshCheckerSheets();
-      toast('Đã ghi dòng Thanh toán vào file '+name);
+      toast(d.noteError || ('Đã ghi dòng Thanh toán và link ảnh vào file '+name), !!d.noteError);
     } else {
       toast((d && d.error) || 'Không ghi được vào file checker', true);
     }
@@ -6292,51 +6302,10 @@ function copyKhStk(khId){
   if(!stk){ toast('Chưa có TK nhận', true); return; }
   copyText(stk);
 }
-function pickBillImage(khId){
-  const inp = document.createElement('input');
-  inp.type = 'file';
-  inp.accept = 'image/*';
-  inp.onchange = function(){
-    const file = inp.files && inp.files[0];
-    if(!file) return;
-    if(file.size > 1500000){ toast('Ảnh lớn hơn 1.5MB, chọn ảnh nhỏ hơn', true); return; }
-    const reader = new FileReader();
-    reader.onload = function(){ saveBillImage(khId, String(reader.result||'')); };
-    reader.readAsDataURL(file);
-  };
-  inp.click();
-}
-function saveBillImage(khId, dataUrl){
-  ensureKhIds();
-  const k = D.kh.find(x=>x._id===khId);
-  if(!k || !dataUrl) return;
-  const am = k.cdAm || k.amount || 0;
-  if(!am){ toast('Chưa có số tiền chỉ định', true); return; }
-  const sup = D.sup.find(s=>s.idCK===k.idCK);
-  D.ck.unshift({
-    date: today(),
-    nv: k.nv || (currentUser ? currentUser.name : ''),
-    kh: k.name,
-    source: khDebtLabel(k.name),
-    payType: 'KH CK',
-    receiver: sup ? sup.name : '',
-    receiverType: sup ? sup.type : '',
-    idCK: k.idCK,
-    stk: sup ? sup.stk : (k.stk||''),
-    link: dataUrl,
-    amount: am,
-    status: 'Chờ XN & Đã tham chiếu HT',
-    ctime: Date.now()
-  });
-  k.status = 'Khách đã CK';
-  autosave(); rt2(); rt4(); rd0(); updateNoti();
-  pushCheckerPayment(D.ck[0]);
-  toast('Đã lưu ảnh bill CK');
-}
 function viewKhBill(khId){
   const k = D.kh.find(x=>x._id===khId);
   const bill = k && khBillOf(k);
-  if(!bill || !bill.link){ toast('Chưa có ảnh bill', true); return; }
+  if(!bill || !bill.link){ toast('Chưa có link bill', true); return; }
   if(/^https?:/i.test(bill.link)){ window.open(bill.link,'_blank','noopener'); return; }
   let box = el('bill-view');
   if(!box){
@@ -6382,11 +6351,11 @@ function rt2(){
     const cdCell = fmt(k.cdAm||k.amount);
     let billCell = '<span style="color:var(--txt3)">—</span>';
     if(k.status==='Chờ khách CK'){
-      billCell = '<button class="pill pill-attach" title="Tải ảnh bill" onclick="pickBillImage(\''+k._id+'\')">'+SVG_LINK+'</button>';
+      billCell = '<button class="pill pill-attach" title="Nhập link bill" onclick="openBillFromKH(\''+k._id+'\')">'+SVG_LINK+'</button>';
     } else if((k.status==='Khách đã CK' || k.status==='Done') && khBillOf(k)){
       const bi = D.ck.indexOf(khBillOf(k));
-      billCell = '<div style="display:flex;gap:6px;align-items:center"><button class="pill pill-edit" title="Xem ảnh bill" onclick="viewKhBill(\''+k._id+'\')">'+eye+'</button>'
-        +(bi>=0?'<button class="pill pill-edit" title="Copy ảnh" onclick="copyCkAt('+bi+')">'+copyIcoKh+'</button>':'')+'</div>';
+      billCell = '<div style="display:flex;gap:6px;align-items:center"><button class="pill pill-edit" title="Xem bill" onclick="viewKhBill(\''+k._id+'\')">'+eye+'</button>'
+        +(bi>=0?'<button class="pill pill-edit" title="Copy link" onclick="copyCkAt('+bi+')">'+copyIcoKh+'</button>':'')+'</div>';
     }
     const acts = [];
     if(isAdmin2 && k.status==='Mới nhập'){
@@ -6427,49 +6396,47 @@ function toggleBillRow(khId){
   row.style.display = row.style.display === 'none' ? '' : 'none';
 }
 
-function saveBillFromKH(khId){
+function openBillFromKH(khId){
   ensureKhIds();
   const k = D.kh.find(x=>x._id===khId);
   if(!k) return;
-
-  const dateEl = document.getElementById('bill-date-'+khId);
-  const linkEl = document.getElementById('bill-link-'+khId);
-  const amEl   = document.getElementById('bill-am-'+khId);
-
-  const date = dateEl ? dateEl.value : today();
-  const link = linkEl ? linkEl.value.trim() : '';
-  const am   = parseInt((amEl ? amEl.value : '').replace(/\D/g,''))||0;
-
+  openBillFromKH.id = khId;
+  el('khb-date').value = today();
+  el('khb-link').value = '';
+  const am = k.cdAm || k.amount || 0;
+  el('khb-am').value = am ? fmtInput(am) : '';
+  openM('m-kh-bill');
+}
+function saveBillFromKH(){
+  ensureKhIds();
+  const k = D.kh.find(x=>x._id===openBillFromKH.id);
+  if(!k) return;
+  const date = el('khb-date').value || today();
+  const link = el('khb-link').value.trim();
+  const am = parseInt((el('khb-am').value||'').replace(/\D/g,''))||0;
+  if(!isBillLink(link)){ toast('Nhập link ảnh bill bắt đầu bằng http', true); return; }
   if(!am){ toast('Nhập số tiền đã CK', true); return; }
-
-  const nvDisplay = k.nv || (currentUser ? currentUser.name : '');
-
   const sup = D.sup.find(s=>s.idCK===k.idCK);
-
-  // Push to D.ck (Tracking CK)
   D.ck.unshift({
     date,
-    nv: nvDisplay,
+    nv: k.nv || (currentUser ? currentUser.name : ''),
     kh: k.name,
+    source: khDebtLabel(k.name),
+    payType: 'KH CK',
+    receiver: sup ? sup.name : '',
+    receiverType: sup ? sup.type : '',
     idCK: k.idCK,
-    stk: sup ? sup.stk : k.stk || '',
+    stk: sup ? sup.stk : (k.stk||''),
     link,
     amount: am,
     status: 'Chờ XN & Đã tham chiếu HT',
-    receiver: sup ? sup.name : '',
-    receiverType: sup ? sup.type : ''
+    ctime: Date.now()
   });
-
-  // Update KH status
   k.status = 'Khách đã CK';
-
-  // Hide bill row
-  const row = document.getElementById('bill-row-'+khId);
-  if(row) row.style.display = 'none';
-
+  closeM('m-kh-bill');
   autosave(); rt2(); rt4(); rd0(); updateNoti();
   pushCheckerPayment(D.ck[0]);
-  toast(`✅ Đã lưu bill CK của ${k.name} → Tracking`);
+  toast('Đã lưu link bill CK của '+k.name);
 }
 
 /* ================================================
@@ -6678,7 +6645,7 @@ function purgeOldBillImages(){
 }
 function viewCkAt(i){
   const c = D.ck[i];
-  if(!c || !c.link){ toast('Chưa có ảnh bill', true); return; }
+  if(!c || !c.link){ toast('Chưa có link bill', true); return; }
   if(/^https?:/i.test(c.link)){ window.open(c.link,'_blank','noopener'); return; }
   let box = el('bill-view');
   if(!box){
@@ -6694,7 +6661,8 @@ function viewCkAt(i){
 }
 function copyCkAt(i){
   const c = D.ck[i];
-  if(!c || !c.link){ toast('Chưa có ảnh bill', true); return; }
+  if(!c || !c.link){ toast('Chưa có link bill', true); return; }
+  if(/^https?:/i.test(c.link)){ copyText(c.link); return; }
   copyBillImage(c.link);
 }
 function rt4(){
@@ -6722,7 +6690,7 @@ function rt4(){
     const phone = isCo ? '' : khDebtPhone(c.kh||'');
     const phoneHtml = phone ? '<div style="font-size:11.5px;font-weight:500;color:#8a8fa3;margin-top:2px">'+escapeHtml(phone)+'</div>' : '';
     const bill = c.link
-      ? '<div style="display:flex;gap:6px;align-items:center"><button class="pill pill-edit" title="Xem" onclick="viewCkAt('+ckIdx+')">'+eye+'</button><button class="pill pill-edit" title="Copy" onclick="copyCkAt('+ckIdx+')">'+copyIco+'</button></div>'
+      ? '<div style="display:flex;gap:6px;align-items:center"><button class="pill pill-edit" title="Xem bill" onclick="viewCkAt('+ckIdx+')">'+eye+'</button><button class="pill pill-edit" title="Copy link" onclick="copyCkAt('+ckIdx+')">'+copyIco+'</button></div>'
       : '<span style="color:var(--txt3)">—</span>';
     const canSupXn = actions.includes('supxn');
     const canDuyet = actions.includes('duyet');
@@ -8097,104 +8065,11 @@ function onCkSourceChange(){
   const am = row.cdAm || row.amount || 0;
   if(am) el('i_cam').value = fmtInput(am);
 }
-function showCkBillPreview(src){
-  const img = el('i_cpreview');
-  if(!img) return;
-  if(!src){ img.removeAttribute('src'); img.style.display = 'none'; return; }
-  img.src = src;
-  img.style.display = '';
-}
-function applyCkBillFile(file){
-  if(!file) return;
-  const stamp = (file.name||'') + ':' + file.size + ':' + (file.lastModified||0);
-  if(applyCkBillFile.last===stamp && Date.now()-(applyCkBillFile.at||0)<800) return;
-  applyCkBillFile.last = stamp;
-  applyCkBillFile.at = Date.now();
-  if(file.size > 1500000){ toast('Ảnh lớn hơn 1.5MB, chọn ảnh nhỏ hơn', true); return; }
-  const reader = new FileReader();
-  reader.onload = function(){
-    const src = String(reader.result||'');
-    el('i_clink').value = src;
-    showCkBillPreview(src);
-    toast('Đã nhận ảnh bill');
-    readCkBill(src);
-  };
-  reader.readAsDataURL(file);
-}
-function readCkBill(src){
-  if(!src) return;
-  toast('Đang đọc ngày và số tiền trên bill...');
-  fetch(new URL('read-bill', window.location.href).href, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ image: src })
-  }).then(function(r){ return r.json(); }).then(function(d){
-    if(!d || d.error){ toast((d && d.error) || 'Không đọc được bill', true); return; }
-    if(d.date && /^\d{4}-\d{2}-\d{2}$/.test(d.date)){
-      el('i_cd').value = d.date;
-      if(el('i_cd_show')) el('i_cd_show').value = d.date;
-    }
-    if(d.amount) el('i_cam').value = fmtInput(Number(d.amount));
-    const bits = [];
-    if(d.date) bits.push('ngày ' + d.date);
-    if(d.amount) bits.push('số tiền ' + fmt(Number(d.amount)));
-    toast(bits.length ? ('Đã đọc bill: ' + bits.join(', ')) : 'Không thấy ngày hoặc số tiền trên ảnh', !bits.length);
-  }).catch(function(){ toast('Không đọc được bill', true); });
-}
-function readCkFile(inp){
-  const file = inp.files && inp.files[0];
-  el('i_clink').value = '';
-  showCkBillPreview('');
-  if(!file) return;
-  if(file.size > 1500000){ toast('Ảnh lớn hơn 1.5MB, chọn ảnh nhỏ hơn', true); inp.value=''; return; }
-  applyCkBillFile(file);
-}
-function onCkBillPaste(e){
-  const items = (e.clipboardData && e.clipboardData.items) || [];
-  for(let i=0;i<items.length;i++){
-    if(items[i].kind==='file' && /^image\//.test(items[i].type)){
-      const file = items[i].getAsFile();
-      if(!file) continue;
-      e.preventDefault();
-      applyCkBillFile(file);
-      return;
-    }
-  }
-}
-function onCkBillDrop(e){
-  const files = (e.dataTransfer && e.dataTransfer.files) || [];
-  let file = null;
-  for(let i=0;i<files.length;i++){
-    if(/^image\//.test(files[i].type)){ file = files[i]; break; }
-  }
-  if(!file){ toast('Chỉ kéo thả file ảnh', true); return; }
-  applyCkBillFile(file);
-}
-function pasteCkBillClipboard(){
-  if(!navigator.clipboard || !navigator.clipboard.read){
-    toast('Trình duyệt chưa cho đọc clipboard. Bấm vào khung ảnh rồi Ctrl+V', true);
-    return;
-  }
-  navigator.clipboard.read().then(function(items){
-    let found = false;
-    items.forEach(function(item){
-      const type = (item.types||[]).find(function(t){ return /^image\//.test(t); });
-      if(!type || found) return;
-      found = true;
-      item.getType(type).then(function(blob){
-        applyCkBillFile(new File([blob], 'bill.png', {type:type}));
-      });
-    });
-    if(!found) toast('Clipboard không có ảnh', true);
-  }).catch(function(){
-    toast('Chưa đọc được clipboard. Bấm vào khung ảnh rồi Ctrl+V', true);
-  });
-}
 function saveCK(){
   const kind = el('i_ckind').value;
   const am = parseInt((el('i_cam').value||'').replace(/\D/g,''))||0;
   const link = el('i_clink').value.trim();
-  if(!link){ toast('Chọn ảnh bill CK', true); return; }
+  if(!isBillLink(link)){ toast('Nhập link ảnh bill bắt đầu bằng http', true); return; }
   if(!am){ toast('Nhập số tiền', true); return; }
   let source = '', kh = '', receiver = '', idCK = '', staffRow = null;
   if(kind==='Công ty CK'){
@@ -8848,6 +8723,7 @@ function showDetSup(id){
    ================================================ */
 document.getElementById('mck').querySelector('.modbg, .mod') || document.getElementById('mck');
 el('mck').addEventListener('click',function(e){if(e.target===this)closeM('mck');});
+el('m-kh-bill').addEventListener('click',function(e){if(e.target===this)closeM('m-kh-bill');});
 el('msup').addEventListener('click',function(e){if(e.target===this)closeM('msup');});
 el('mkh').addEventListener('click',function(e){if(e.target===this)closeM('mkh');});
 el('mdp').addEventListener('click',function(e){if(e.target===this)closeM('mdp');});
@@ -8857,52 +8733,6 @@ el('m-edit-kh-char').addEventListener('click',function(e){if(e.target===this)clo
 el('m-edit-ck').addEventListener('click',function(e){if(e.target===this)closeM('m-edit-ck');});
 el('m-add-kh-char').addEventListener('click',function(e){if(e.target===this)closeM('m-add-kh-char');});
 el('m-del-company-bank').addEventListener('click',function(e){if(e.target===this)closeM('m-del-company-bank');});
-(function(){
-  const zone = el('ck-bill-drop');
-  if(!zone) return;
-  function highlight(on){
-    zone.style.borderColor = on ? '#5b6bd6' : '';
-    zone.style.background = on ? 'rgba(91,107,214,0.08)' : '';
-  }
-  zone.addEventListener('dragenter', function(e){
-    e.preventDefault();
-    highlight(true);
-  });
-  zone.addEventListener('dragover', function(e){
-    e.preventDefault();
-    if(e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    highlight(true);
-  });
-  zone.addEventListener('dragleave', function(e){
-    if(zone.contains(e.relatedTarget)) return;
-    highlight(false);
-  });
-  zone.addEventListener('drop', function(e){
-    e.preventDefault();
-    highlight(false);
-    onCkBillDrop(e);
-  });
-})();
-document.addEventListener('dragover', function(e){
-  const modal = el('mck');
-  if(!modal || !modal.classList.contains('on')) return;
-  e.preventDefault();
-});
-document.addEventListener('drop', function(e){
-  const modal = el('mck');
-  if(!modal || !modal.classList.contains('on')) return;
-  e.preventDefault();
-});
-document.addEventListener('paste', function(e){
-  const modal = el('mck');
-  if(!modal || !modal.classList.contains('on')) return;
-  const items = (e.clipboardData && e.clipboardData.items) || [];
-  let image = false;
-  for(let i=0;i<items.length;i++) if(/^image\//.test(items[i].type)) image = true;
-  if(!image) return;
-  onCkBillPaste(e);
-});
-
 // Override openM for mck to populate IDs
 const origOpenM = openM;
 function openM(id){
@@ -8918,8 +8748,6 @@ function openM(id){
     el('i_clink').value = '';
     el('i_cam').value = '';
     el('i_csrc').value = '';
-    const file = el('i_cfile'); if(file) file.value = '';
-    showCkBillPreview('');
     fillCkBillSelects();
     toggleCkKind();
   }
