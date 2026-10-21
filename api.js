@@ -345,77 +345,6 @@ function readBody(req, limit) {
   });
 }
 
-function geminiApiKey() {
-  const fromEnv = String(process.env.XUKA_GEMINI_API_KEY || '').trim();
-  if (fromEnv) return fromEnv;
-  try {
-    const file = path.join(DATA_DIR, 'gemini-api-key.txt');
-    if (fs.existsSync(file)) return String(fs.readFileSync(file, 'utf8') || '').trim();
-  } catch (e) {}
-  return '';
-}
-
-function billImagePart(image) {
-  const raw = String(image || '').trim();
-  const m = raw.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
-  if (m) return { mimeType: m[1], data: m[2].replace(/\s/g, '') };
-  const data = raw.replace(/\s/g, '');
-  if (data.length > 80) return { mimeType: 'image/jpeg', data };
-  return null;
-}
-
-function normalizeBillRead(text) {
-  const cleaned = String(text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
-  let obj = null;
-  try { obj = JSON.parse(cleaned); } catch (e) {
-    const found = cleaned.match(/\{[\s\S]*\}/);
-    if (found) { try { obj = JSON.parse(found[0]); } catch (e2) { obj = null; } }
-  }
-  if (!obj || typeof obj !== 'object') return { date: '', amount: 0 };
-  let date = String(obj.date || '').trim();
-  const iso = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const dmy = date.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-  if (iso) date = iso[1] + '-' + iso[2] + '-' + iso[3];
-  else if (dmy) date = dmy[3] + '-' + String(dmy[2]).padStart(2, '0') + '-' + String(dmy[1]).padStart(2, '0');
-  else date = '';
-  let amount = obj.amount;
-  if (typeof amount === 'string') amount = amount.replace(/[^\d]/g, '');
-  amount = Math.round(Number(amount) || 0);
-  if (!(amount > 0)) amount = 0;
-  return { date, amount };
-}
-
-async function readBillImage(image) {
-  const key = geminiApiKey();
-  if (!key) return { error: 'Chưa có XUKA_GEMINI_API_KEY trên server' };
-  const img = billImagePart(image);
-  if (!img || !img.data) return { error: 'Ảnh bill không đọc được' };
-  const model = process.env.XUKA_GEMINI_MODEL || 'gemini-2.5-flash';
-  const body = JSON.stringify({
-    contents: [{
-      parts: [
-        { text: 'Đây là ảnh bill chuyển khoản ngân hàng Việt Nam. Chỉ trả về một JSON, không markdown: {"date":"YYYY-MM-DD","amount":0}. date là ngày giao dịch trên bill. amount là số tiền chuyển, số nguyên VND. Không lấy số dư tài khoản. Không thấy thì date là chuỗi rỗng và amount là 0.' },
-        { inlineData: { mimeType: img.mimeType, data: img.data } }
-      ]
-    }],
-    generationConfig: { temperature: 0, responseMimeType: 'application/json' }
-  });
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-  const json = await httpsRequest(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': key,
-      'Content-Length': Buffer.byteLength(body)
-    }
-  }, body);
-  const parts = json && json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts;
-  const text = Array.isArray(parts) ? parts.map((p) => p.text || '').join('') : '';
-  const out = normalizeBillRead(text);
-  if (!out.date && !out.amount) return { error: 'Không thấy ngày hoặc số tiền trên ảnh', date: '', amount: 0 };
-  return out;
-}
-
 function hashId(s) {
   let h = 2166136261;
   const str = String(s);
@@ -584,24 +513,6 @@ http.createServer((req, res) => {
       const result = await appendCheckerPayment(payload.file, payload);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
-    }).catch(() => {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end('{"error":"invalid"}');
-    });
-    return;
-  }
-  if (route === '/api/read-bill' && req.method === 'POST') {
-    readBody(req, 4e6).then(async (body) => {
-      let payload = {};
-      try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
-      try {
-        const result = await readBillImage(payload.image);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (e) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: (e && e.message) || 'Không đọc được bill' }));
-      }
     }).catch(() => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end('{"error":"invalid"}');
