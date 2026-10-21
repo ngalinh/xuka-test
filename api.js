@@ -138,18 +138,34 @@ function sheetTitle(file) {
   return String((file && file.sheet) || 'Công nợ').replace(/'/g, "''");
 }
 
-async function sheetValuesGet(id, range) {
+async function sheetValuesGet(id, range, render) {
   const token = await googleToken();
-  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueRenderOption=UNFORMATTED_VALUE';
+  const mode = render || 'UNFORMATTED_VALUE';
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueRenderOption=' + mode;
   return httpsRequest(url, { method: 'GET', headers: { Authorization: 'Bearer ' + token } });
 }
 
-async function sheetValuesUpdate(id, range, values) {
+async function sheetValuesUpdate(id, range, values, input) {
   const token = await googleToken();
   const body = JSON.stringify({ values: values });
-  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED';
+  const mode = input === 'RAW' ? 'RAW' : 'USER_ENTERED';
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values/' + encodeURIComponent(range) + '?valueInputOption=' + mode;
   return httpsRequest(url, {
     method: 'PUT',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(body)
+    }
+  }, body);
+}
+
+async function sheetBatch(id, requests) {
+  const token = await googleToken();
+  const body = JSON.stringify({ requests: requests });
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + ':batchUpdate';
+  return httpsRequest(url, {
+    method: 'POST',
     headers: {
       Authorization: 'Bearer ' + token,
       'Content-Type': 'application/json',
@@ -165,30 +181,80 @@ async function readCheckerSheet(file) {
   return parseCongNo((data && data.values) || []);
 }
 
+async function copyCheckerRowFormat(spreadsheetId, title, fromRow, toRow) {
+  if (!(fromRow >= 3) || fromRow === toRow) return false;
+  const meta = await sheetProps(spreadsheetId);
+  const sheets = (meta && meta.sheets) || [];
+  const hit = sheets.map(function (s) { return s.properties; }).find(function (s) {
+    return s && s.title === title;
+  });
+  if (!hit) return false;
+  await sheetBatch(spreadsheetId, [{
+    copyPaste: {
+      source: {
+        sheetId: hit.sheetId,
+        startRowIndex: fromRow - 1,
+        endRowIndex: fromRow,
+        startColumnIndex: 0,
+        endColumnIndex: 7
+      },
+      destination: {
+        sheetId: hit.sheetId,
+        startRowIndex: toRow - 1,
+        endRowIndex: toRow,
+        startColumnIndex: 0,
+        endColumnIndex: 7
+      },
+      pasteType: 'PASTE_FORMAT'
+    }
+  }]);
+  return true;
+}
+
 async function appendCheckerPayment(file, payment) {
   const id = sheetIdOf(file && file.url);
   if (!id) return { error: 'Link file không phải Google Sheet' };
   const amount = Number(payment && payment.amount);
   if (!(amount > 0)) return { error: 'Không có số tiền thanh toán' };
   const title = sheetTitle(file);
-  let existing;
+  const titleRaw = String((file && file.sheet) || 'Công nợ');
+  let grid;
   try {
-    existing = await sheetValuesGet(id, "'" + title + "'!A:A");
+    grid = await sheetValuesGet(id, "'" + title + "'!A:D");
   } catch (e) {
     return sheetFail(e);
   }
-  const col = (existing && existing.values) || [];
+  const rows = (grid && grid.values) || [];
+  let shownRows = [];
+  try {
+    const shown = await sheetValuesGet(id, "'" + title + "'!A:D", 'FORMATTED_VALUE');
+    shownRows = (shown && shown.values) || [];
+  } catch (e) {
+    shownRows = [];
+  }
   let last = 2;
-  for (let i = 0; i < col.length; i++) {
-    if (col[i] && String(col[i][0] == null ? '' : col[i][0]).trim() !== '') last = i + 1;
+  let template = 0;
+  for (let i = 0; i < rows.length; i++) {
+    const line = rows[i] || [];
+    const prettyDate = String((shownRows[i] || [])[0] || '');
+    if (String(line[0] == null ? '' : line[0]).trim() !== '') last = i + 1;
+    if (typeof line[3] === 'number' && line[3] && /[A-Za-z]/.test(prettyDate)) template = i + 1;
   }
   const row = Math.max(last + 1, 3);
+  if (!template || template < 3) template = last >= 3 ? last : 0;
+  let formatted = false;
+  try {
+    formatted = await copyCheckerRowFormat(id, titleRaw, template, row);
+  } catch (e) {
+    formatted = false;
+  }
   const rawNote = String((payment && (payment.link || payment.note)) || '').trim();
   const note = /^https?:\/\//i.test(rawNote) ? rawNote : '';
+  const dateCell = formatted ? sheetSerial(payment.date) : vnDate(payment.date);
   try {
     await sheetValuesUpdate(id, "'" + title + "'!A" + row + ':D' + row, [[
-      vnDate(payment.date), 'Thanh toán', '', amount
-    ]]);
+      dateCell, 'Thanh toán', '', amount
+    ]], formatted ? 'RAW' : 'USER_ENTERED');
   } catch (e) {
     const msg = (e && e.message) || '';
     if (/403|permission|forbidden/i.test(msg)) {
