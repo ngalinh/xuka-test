@@ -6694,12 +6694,17 @@ function rt4(){
       : '<span style="color:var(--txt3)">—</span>';
     const canSupXn = actions.includes('supxn');
     const canDuyet = actions.includes('duyet');
+    const canEditBill = actions.includes('bill');
     const label = ckStatusLabel(c.status);
     let acts = '';
     if(c.status==='Chờ XN & Đã tham chiếu HT' && canSupXn)
-      acts = '<button class="act-pill pill-attach" onclick="askConfirmAction(\'supxn\','+ckIdx+')">Sup/Checker XN</button>';
+      acts += '<button class="act-pill pill-attach" onclick="askConfirmAction(\'supxn\','+ckIdx+')">Sup/Checker XN</button>';
     else if(label==='Sup/Checker XN' && canDuyet && c.payType!=='Công ty CK')
-      acts = '<button class="act-pill pill-attach" onclick="askConfirmAction(\'duyet\','+ckIdx+')">Duyệt</button>';
+      acts += '<button class="act-pill pill-attach" onclick="askConfirmAction(\'duyet\','+ckIdx+')">Duyệt</button>';
+    if(canEditBill){
+      acts += '<button class="pill pill-edit" title="Sửa" onclick="openEditCK('+ckIdx+')">'+SVG_PENCIL+'</button>';
+      acts += '<button class="pill pill-del" title="Xoá" onclick="delCK('+ckIdx+')">'+SVG_TRASH+'</button>';
+    }
     return '<tr>'
       +'<td class="nowrap">'+escapeHtml(c.date||'')+'</td>'
       +'<td class="nowrap">'+escapeHtml(c.nv||'—')+'</td>'
@@ -6709,7 +6714,7 @@ function rt4(){
       +'<td class="num">'+fmt(c.amount)+'</td>'
       +'<td>'+bill+'</td>'
       +'<td>'+sb(label)+'</td>'
-      +'<td style="white-space:nowrap">'+acts+'</td>'
+      +'<td style="white-space:nowrap"><div style="display:flex;gap:6px;align-items:center">'+acts+'</div></td>'
       +'</tr>';
   }).join('') : '<tr><td colspan="9" class="empty">Chưa có bill CK nào</td></tr>';
   renderPg('pg4','pg4',ckPages,ckCur,'rt4');
