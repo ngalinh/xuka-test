@@ -3211,8 +3211,9 @@ function mDelCK(idx){
   const c=D.ck[idx];if(!c)return;
   if(!confirm('Xoá bill CK của '+c.kh+'?')) return;
   D.ck.splice(idx,1);
+  var still=D.ck.some(function(x){ return x.kh===c.kh && x.idCK && x.idCK===c.idCK; });
   const khEntry=D.kh.find(k=>k.name===c.kh&&k.idCK===c.idCK);
-  if(khEntry&&khEntry.status==='Khách đã CK') khEntry.status='Chờ khách CK';
+  if(khEntry&&khEntry.status==='Khách đã CK'&&!still) khEntry.status='Chờ khách CK';
   saveData(); renderTracking();
 }
 function mDelPartner(idx){
@@ -7012,8 +7013,9 @@ function delCK(i){
   const c = D.ck[i];
   D.ck.splice(i,1);
   if(c){
+    const still = D.ck.some(x=>x.kh===c.kh && x.idCK && x.idCK===c.idCK);
     const khEntry = D.kh.find(k=>k.name===c.kh && k.idCK===c.idCK);
-    if(khEntry && khEntry.status==='Khách đã CK') khEntry.status='Chờ khách CK';
+    if(khEntry && khEntry.status==='Khách đã CK' && !still) khEntry.status='Chờ khách CK';
   }
   rt4(); rd0(); rt1(); rt2(); autosave();
   toast('Đã xoá bill CK');
