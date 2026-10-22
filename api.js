@@ -181,6 +181,85 @@ async function readCheckerSheet(file) {
   return parseCongNo((data && data.values) || []);
 }
 
+function extractSheetLink(formula, shown) {
+  const raw = String(formula || '');
+  const quoted = raw.match(/=\s*(?:IMAGE|HYPERLINK)\s*\(\s*"([^"]+)"/i);
+  if (quoted) {
+    let url = quoted[1];
+    if (url.indexOf('//') === 0) url = 'https:' + url;
+    if (/^https?:\/\//i.test(url)) return url;
+  }
+  const any = raw.match(/https?:\/\/[^\s"')]+/i);
+  if (any) return any[0];
+  const text = String(shown || '').trim();
+  if (/^https?:\/\//i.test(text)) return text;
+  return '';
+}
+
+async function readCheckerLines(file) {
+  const id = sheetIdOf(file && file.url);
+  if (!id) return { error: 'Link file không phải Google Sheet' };
+  const range = "'" + sheetTitle(file) + "'!A:F";
+  let shown, formulas;
+  try {
+    shown = await sheetValuesGet(id, range, 'FORMATTED_VALUE');
+    formulas = await sheetValuesGet(id, range, 'FORMULA');
+  } catch (e) {
+    return sheetFail(e);
+  }
+  const rows = (shown && shown.values) || [];
+  const forms = (formulas && formulas.values) || [];
+  let header = -1;
+  const idx = { date: 0, content: 1, congNo: 2, payment: 3, remain: 4, note: 5 };
+  for (let r = 0; r < Math.min(rows.length, 15); r++) {
+    const line = (rows[r] || []).map(function (c) { return String(c || '').trim().toLowerCase(); });
+    const cong = line.findIndex(function (c) { return c === 'công nợ'; });
+    const pay = line.findIndex(function (c) { return c === 'thanh toán'; });
+    if (cong < 0 || pay < 0) continue;
+    header = r;
+    const date = line.findIndex(function (c) { return c === 'ngày'; });
+    const content = line.findIndex(function (c) { return c === 'nội dung'; });
+    const remain = line.findIndex(function (c) { return c === 'còn lại'; });
+    const note = line.findIndex(function (c) { return c === 'ghi chú'; });
+    idx.date = date >= 0 ? date : 0;
+    idx.content = content >= 0 ? content : 1;
+    idx.congNo = cong;
+    idx.payment = pay;
+    idx.remain = remain >= 0 ? remain : 4;
+    idx.note = note >= 0 ? note : 5;
+    break;
+  }
+  if (header < 0) return { error: 'Không thấy cột Công nợ và Thanh toán' };
+  let gross = null;
+  let left = null;
+  if (header > 0) {
+    const above = rows[header - 1] || [];
+    gross = moneyCell(above[idx.congNo]);
+    left = moneyCell(above[idx.remain]);
+  }
+  const lines = [];
+  for (let r = header + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const form = forms[r] || [];
+    const congNo = moneyCell(row[idx.congNo]);
+    const payment = moneyCell(row[idx.payment]);
+    const remain = moneyCell(row[idx.remain]);
+    const date = String(row[idx.date] == null ? '' : row[idx.date]).trim();
+    const content = String(row[idx.content] == null ? '' : row[idx.content]).trim();
+    const link = extractSheetLink(form[idx.note], row[idx.note]);
+    if (!date && !content && congNo == null && payment == null) continue;
+    lines.push({
+      date: date,
+      content: content,
+      congNo: congNo || 0,
+      payment: payment || 0,
+      remain: remain == null ? '' : remain,
+      link: link
+    });
+  }
+  return { lines: lines, gross: gross, left: left };
+}
+
 async function copyCheckerRowFormat(spreadsheetId, title, fromRow, toRow) {
   if (!(fromRow >= 3) || fromRow === toRow) return false;
   const meta = await sheetProps(spreadsheetId);
@@ -566,6 +645,19 @@ http.createServer((req, res) => {
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ rows }));
+    }).catch(() => {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end('{"error":"invalid"}');
+    });
+    return;
+  }
+  if (route === '/api/checker-statement' && req.method === 'POST') {
+    readBody(req, 1e6).then(async (body) => {
+      let payload = {};
+      try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
+      const result = await readCheckerLines(payload.file || {});
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
     }).catch(() => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end('{"error":"invalid"}');

@@ -737,6 +737,250 @@ function fetchRemoteData() {
 </script>
 <script>
 (function(){
+  function renderSaokePage(name){
+    document.title = 'Sao kê ' + name;
+    document.body.innerHTML = '<div style="min-height:100vh;padding:28px 20px 60px;background:linear-gradient(160deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%);color:#2a2e3a;font-family:Be Vietnam Pro,system-ui,sans-serif"><div style="max-width:1100px;margin:0 auto;font-size:15px">Đang mở sao kê...</div></div>';
+    var hide = document.getElementById('saoke-hide');
+    if(hide) hide.remove();
+    document.documentElement.style.visibility = 'visible';
+    fetch('/api/data').then(function(r){ return r.json(); }).then(function(d){
+      return buildSaoke(name, d).then(function(model){ paintSaoke(model); });
+    }).catch(function(){
+      document.body.innerHTML = '<div style="padding:40px;font-family:Be Vietnam Pro,sans-serif">Không tải được dữ liệu sao kê.</div>';
+    });
+  }
+  function saokeEsc(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function saokeMoney(n){
+    var x = Math.round(Number(n) || 0);
+    return x.toLocaleString('en-US');
+  }
+  function saokeDate(s){
+    var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return Number(m[3]) + '/' + Number(m[2]) + '/' + m[1];
+    return String(s || '');
+  }
+  function saokeDay(s){
+    var t = String(s || '');
+    var iso = t.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if(iso) return iso[1] + '-' + iso[2] + '-' + iso[3];
+    var dmy = t.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if(dmy) return dmy[3] + '-' + ('0' + dmy[2]).slice(-2) + '-' + ('0' + dmy[1]).slice(-2);
+    var mon = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+    var eng = t.match(/(\d{1,2})[-\s]([A-Za-z]{3})[a-z]*[-\s](\d{4})/);
+    if(eng && mon[eng[2].toLowerCase()]) return eng[3] + '-' + mon[eng[2].toLowerCase()] + '-' + ('0' + eng[1]).slice(-2);
+    return '';
+  }
+  function saokeHttp(link){
+    var s = String(link || '').trim();
+    return /^https?:\/\//i.test(s) ? s : '';
+  }
+  function saokePartnerOf(c, partners, sup){
+    if(c.partner && partners.some(function(p){ return p.name === c.partner; })) return c.partner;
+    var s = c.idCK ? sup.find(function(x){ return x.idCK === c.idCK; }) : null;
+    return s ? s.name : (c.partner || '');
+  }
+  function saokePaid(st){
+    return st === 'Đã XN & Nhập file Sup/Checker' || st === 'Sup/Checker XN' || st === 'Done & Nhập Thu Chi' || st === 'Done';
+  }
+  function saokeFillLinks(lines, bills){
+    var used = {};
+    lines.forEach(function(line){
+      if(line.link || !(Number(line.payment) > 0)) return;
+      var amount = Number(line.payment);
+      var day = saokeDay(line.date);
+      var hits = bills.filter(function(b, i){ return !used[i] && saokeHttp(b.link) && Number(b.amount) === amount; });
+      var pick = -1;
+      if(day){
+        var same = hits.filter(function(b){ return saokeDay(b.date) === day; });
+        if(same.length === 1) pick = bills.indexOf(same[0]);
+      }
+      if(pick < 0 && hits.length === 1) pick = bills.indexOf(hits[0]);
+      if(pick >= 0){
+        used[pick] = true;
+        line.link = saokeHttp(bills[pick].link);
+      }
+    });
+  }
+  function buildSaoke(name, raw){
+    var main = (raw && raw.xuka_cn_v1) || raw || {};
+    var partners = main.partners || [];
+    var partner = partners.find(function(p){ return p.name === name; }) || null;
+    var sup = main.sup || [];
+    var ck = main.ck || [];
+    var gc = main.muaGc || [];
+    var files = main.checkerFiles || {};
+    var bills = ck.filter(function(c){ return saokePartnerOf(c, partners, sup) === name; })
+      .sort(function(a, b){ return String(b.date || '').localeCompare(String(a.date || '')); });
+    var model = {
+      name: name,
+      type: partner ? partner.type : '',
+      stk: partner ? (partner.stk || '') : '',
+      missing: !partner,
+      fileUrl: partner && partner.type === 'Checker' && files[name] && files[name].url ? files[name].url : '',
+      sheetError: '',
+      sheetLines: [],
+      debts: [],
+      bills: bills
+    };
+    if(partner && partner.type === 'Sup'){
+      model.debts = gc.filter(function(r){ return r.sup === name; })
+        .sort(function(a, b){ return String(b.date || '').localeCompare(String(a.date || '')); });
+    }
+    var file = partner && partner.type === 'Checker' ? files[name] : null;
+    if(!(file && file.url)) return Promise.resolve(model);
+    return fetch('/api/checker-statement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: file })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(d && d.lines){
+        model.sheetLines = d.lines;
+        model.gross = d.gross;
+        model.left = d.left;
+        saokeFillLinks(model.sheetLines, bills);
+      } else {
+        model.sheetError = (d && d.error) || 'Không đọc được file Công nợ';
+      }
+      return model;
+    }).catch(function(){
+      model.sheetError = 'Không đọc được file Công nợ';
+      return model;
+    });
+  }
+  function saokeLinkCell(url){
+    if(!url) return '<td></td>';
+    return '<td><a href="' + saokeEsc(url) + '" target="_blank" rel="noopener">' + saokeEsc(url) + '</a></td>';
+  }
+  function paintSaoke(m){
+    window.__saokeModel = m;
+    var congNo = 0, payment = 0, remain = 0;
+    if(m.sheetLines.length){
+      m.sheetLines.forEach(function(r){ payment += Number(r.payment) || 0; });
+      congNo = m.gross == null ? m.sheetLines.reduce(function(a, r){ return a + (Number(r.congNo) || 0); }, 0) : Number(m.gross) || 0;
+      remain = m.left == null ? (congNo - payment) : Number(m.left) || 0;
+    } else {
+      m.debts.forEach(function(r){ if(r.status === 'Y/C TT') congNo += Number(r.vnd) || 0; });
+      m.bills.forEach(function(c){ if(saokePaid(c.status)) payment += Number(c.amount) || 0; });
+      remain = congNo - payment;
+    }
+    var css = 'body{margin:0}a{color:#3d4fc4}table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden}th,td{padding:8px 10px;border-bottom:1px solid #eceef5;font-size:13px;text-align:left;vertical-align:top}th{background:#f4f5fb;font-size:12px;color:#5c6274}td.num,th.num{text-align:right;white-space:nowrap}.box{background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.9);border-radius:18px;padding:16px 18px;margin-bottom:16px}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px}.sum{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.sum div{background:#fff;border-radius:14px;padding:12px 14px;min-width:140px}.sum b{display:block;font-size:18px;margin-top:4px}button{font:inherit;border:none;border-radius:999px;padding:8px 16px;background:linear-gradient(135deg,#8a9bf2,#b39bea);color:#fff;cursor:pointer;font-weight:600}';
+    var html = '<style>' + css + '</style><div style="min-height:100vh;padding:28px 18px 64px;background:linear-gradient(160deg,#d3ece8 0%,#dadbf3 52%,#d7d1f3 100%);color:#2a2e3a;font-family:Be Vietnam Pro,system-ui,sans-serif"><div style="max-width:1100px;margin:0 auto">';
+    html += '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h1>Sao kê ' + saokeEsc(m.type || '') + ' ' + saokeEsc(m.name) + '</h1>';
+    html += '<div style="color:#5c6274;font-size:13px">' + saokeEsc(m.stk || '') + '</div></div>';
+    html += '<button type="button" onclick="exportSaoke()">Xuất Excel</button></div>';
+    if(m.missing){
+      html += '<div class="box">Không thấy Sup/Checker này trong danh sách.</div></div></div>';
+      document.body.innerHTML = html;
+      return;
+    }
+    html += '<div class="sum"><div>Công nợ<b>' + saokeMoney(congNo) + '</b></div><div>Payment<b>' + saokeMoney(payment) + '</b></div><div>Còn lại<b>' + saokeMoney(remain) + '</b></div></div>';
+    if(m.fileUrl) html += '<div style="margin-bottom:14px"><a href="' + saokeEsc(m.fileUrl) + '" target="_blank" rel="noopener">Mở file Google Sheet</a></div>';
+    if(m.sheetError) html += '<div class="box">' + saokeEsc(m.sheetError) + '</div>';
+    if(m.type === 'Checker'){
+      html += '<div class="box"><h2>Sao kê file Công nợ</h2>';
+      html += m.sheetLines.length ? saokeTable(['Ngày','Nội dung','Công nợ','Thanh toán','Còn lại','Link ảnh'], m.sheetLines.map(function(r){
+        return [saokeEsc(r.date), saokeEsc(r.content), '<td class="num">' + saokeMoney(r.congNo) + '</td>', '<td class="num">' + saokeMoney(r.payment) + '</td>', '<td class="num">' + (r.remain === '' ? '' : saokeMoney(r.remain)) + '</td>', saokeLinkCell(r.link)];
+      })) : '<div style="color:#5c6274">Chưa có dòng trong file, hoặc checker chưa gắn file.</div>';
+      html += '</div>';
+    } else {
+      html += '<div class="box"><h2>Công nợ</h2>';
+      html += m.debts.length ? saokeTable(['Ngày','Website','USD','Rate','VNĐ','Người thu','Tình trạng'], m.debts.map(function(r){
+        return [saokeEsc(saokeDate(r.date)), saokeEsc(r.website || ''), saokeEsc(r.usd || ''), saokeEsc(r.rate || ''), '<td class="num">' + saokeMoney(r.vnd) + '</td>', saokeEsc(r.who || ''), saokeEsc(r.status || '')];
+      })) : '<div style="color:#5c6274">Chưa có dòng Mua GC.</div>';
+      html += '</div>';
+    }
+    html += '<div class="box"><h2>Payment</h2>';
+    html += m.bills.length ? saokeTable(['Ngày','Khách','Số tiền','Tình trạng','Link ảnh'], m.bills.map(function(c){
+      var who = c.payType === 'Công ty CK' ? (c.source || 'Công ty') : (c.kh || '');
+      return [saokeEsc(saokeDate(c.date)), saokeEsc(who), '<td class="num">' + saokeMoney(c.amount) + '</td>', saokeEsc(c.status || ''), saokeLinkCell(saokeHttp(c.link))];
+    })) : '<div style="color:#5c6274">Chưa có payment.</div>';
+    html += '</div><div style="font-size:12px;color:#5c6274">File Excel ghi link ảnh, không nhúng ảnh.</div></div></div>';
+    document.body.innerHTML = html;
+  }
+  function saokeTable(heads, rows){
+    var html = '<table><thead><tr>' + heads.map(function(h, i){
+      var num = /Công nợ|Thanh toán|Còn lại|VNĐ|Số tiền/.test(h);
+      return '<th' + (num ? ' class="num"' : '') + '>' + h + '</th>';
+    }).join('') + '</tr></thead><tbody>';
+    rows.forEach(function(cells){
+      html += '<tr>' + cells.map(function(c){
+        return String(c).indexOf('<td') === 0 ? c : '<td>' + c + '</td>';
+      }).join('') + '</tr>';
+    });
+    return html + '</tbody></table>';
+  }
+  window.exportSaoke = function(){
+    var m = window.__saokeModel;
+    if(!m) return;
+    if(!window.XLSX){ alert('Chưa tải được thư viện Excel'); return; }
+    var aoa = [['Sao kê ' + (m.type || '') + ' ' + m.name], ['STK', m.stk || ''], []];
+    var links = [];
+    function addLink(rowIndex, col, url){
+      if(url) links.push({ r: rowIndex, c: col, url: url });
+    }
+    if(m.type === 'Checker'){
+      aoa.push(['SAO KÊ FILE CÔNG NỢ']);
+      aoa.push(['Ngày','Nội dung','Công nợ','Thanh toán','Còn lại','Link ảnh']);
+      m.sheetLines.forEach(function(r){
+        var row = [r.date, r.content, Number(r.congNo) || 0, Number(r.payment) || 0, r.remain === '' ? '' : Number(r.remain) || 0, r.link || ''];
+        addLink(aoa.length, 5, r.link);
+        aoa.push(row);
+      });
+      aoa.push([]);
+    } else {
+      aoa.push(['CÔNG NỢ']);
+      aoa.push(['Ngày','Website','USD','Rate','VNĐ','Người thu','Tình trạng']);
+      m.debts.forEach(function(r){
+        aoa.push([saokeDate(r.date), r.website || '', r.usd || '', r.rate || '', Number(r.vnd) || 0, r.who || '', r.status || '']);
+      });
+      aoa.push([]);
+    }
+    aoa.push(['PAYMENT']);
+    aoa.push(['Ngày','Khách','Số tiền','Tình trạng','Link ảnh']);
+    m.bills.forEach(function(c){
+      var who = c.payType === 'Công ty CK' ? (c.source || 'Công ty') : (c.kh || '');
+      var link = saokeHttp(c.link);
+      addLink(aoa.length, 4, link);
+      aoa.push([saokeDate(c.date), who, Number(c.amount) || 0, c.status || '', link]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    links.forEach(function(item){
+      var addr = XLSX.utils.encode_cell({ r: item.r, c: item.c });
+      ws[addr] = { t: 's', v: item.url, l: { Target: item.url } };
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sao ke');
+    XLSX.writeFile(wb, 'Sao ke ' + m.name + '.xlsx');
+  };
+  window.openSaoke = function(name){
+    var u = new URL(location.href);
+    u.searchParams.set('saoke', name);
+    u.hash = '';
+    window.open(u.toString(), '_blank', 'noopener');
+  };
+  document.addEventListener('click', function(e){
+    var n = e.target && e.target.closest ? e.target.closest('[data-saoke]') : null;
+    if(!n) return;
+    e.preventDefault();
+    var name = n.getAttribute('data-saoke') || '';
+    try { name = decodeURIComponent(name); } catch (err) {}
+    if(name) window.openSaoke(name);
+  });
+  var saokeName = '';
+  try { saokeName = new URLSearchParams(location.search).get('saoke') || ''; } catch (e) { saokeName = ''; }
+  if(saokeName){
+    window.__mobile = true;
+    var hide = document.createElement('style');
+    hide.id = 'saoke-hide';
+    hide.textContent = 'html{visibility:hidden}';
+    document.head.appendChild(hide);
+    var startSaoke = function(){ renderSaokePage(saokeName); };
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startSaoke);
+    else startSaoke();
+    return;
+  }
   var isMobile = (window.innerWidth <= 768) ||
     (navigator.maxTouchPoints > 0 && window.innerWidth <= 900);
   if(!isMobile) return;
@@ -2665,7 +2909,7 @@ function renderSupDebt(){
     const canDoCopy=canEdit&&s.status==='Cancelled';
     return '<div class="list-row">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">'
-      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:14px;font-weight:600">'+(s.name||'—')+'</span>'+typePill(s.type)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" data-saoke="'+encodeURIComponent(s.name||'')+'" style="font-size:14px;font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">'+escapeHtml(s.name||'—')+'</button>'+typePill(s.type)+'</div>'
       +statusPill(s.status||'Chờ điều phối')+'</div>'
       +(s.nv?'<div style="font-size:11px;color:#9aa0b2;margin-bottom:5px">NV: '+s.nv+'</div>':'')
       +(pchar&&(pchar.tm||pchar.am)?'<div style="font-size:11px;color:#797f90;margin-bottom:5px">'+SVG_CLOCK+pchar.tm+(pchar.am?' · '+SVG_COIN+pchar.am:'')+'</div>':'')
@@ -2757,7 +3001,7 @@ function renderSupList(){
   const list=D.partners.length?D.partners.map((p,i)=>'<div style="display:flex;align-items:flex-start;gap:13px;background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.72);border-radius:16px;box-shadow:0 5px 14px rgba(120,120,180,0.08);padding:13px 15px;margin-bottom:10px">'
     +'<div style="width:42px;height:42px;border-radius:13px;background:linear-gradient(150deg,#8a9bf2,#b39bea);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex:none">'+initials(p.name)+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><span style="font-size:13.5px;font-weight:600">'+p.name+'</span>'+typePill(p.type)+'</div>'
+    +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><button type="button" data-saoke="'+encodeURIComponent(p.name)+'" style="font-size:13.5px;font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">'+escapeHtml(p.name)+'</button>'+typePill(p.type)+'</div>'
     +(p.stk?'<div class="mono" style="font-size:11.5px">'+p.stk+'</div>':'')
     +((p.tm||p.am)?'<div style="font-size:11px;color:#9aa0b2;margin-top:2px">'+(p.tm?SVG_CLOCK+p.tm:'')+(p.am?' · '+SVG_COIN+p.am:'')+'</div>':'')
     +'</div>'
@@ -6273,7 +6517,7 @@ function rt1(){
     return `<tr>
       <td>${start+idx+1}</td>
       <td><span class="badge ${b.p.type==='Sup'?'b-sup':'b-mh'}">${b.p.type}</span></td>
-      <td style="font-weight:600">${escapeHtml(b.p.name)}${((D.checkerFiles||{})[b.p.name]||{}).url ? `<div style="margin-top:4px"><a href="${escapeHtml((D.checkerFiles||{})[b.p.name].url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#5b6bd6">Mở file</a></div>` : ''}</td>
+      <td style="font-weight:600"><button type="button" data-saoke="${encodeURIComponent(b.p.name)}" style="font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">${escapeHtml(b.p.name)}</button>${((D.checkerFiles||{})[b.p.name]||{}).url ? `<div style="margin-top:4px"><a href="${escapeHtml((D.checkerFiles||{})[b.p.name].url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#5b6bd6">Mở file</a></div>` : ''}</td>
       <td class="num">${iCell}</td>
       <td class="num">${iiCell}</td>
       <td class="num">${iiiCell}</td>
@@ -7336,7 +7580,7 @@ function rt5a(){
         const i = D.partners.indexOf(p);
         return `<tr>
           <td><span class="badge ${p.type==='Sup'?'b-sup':'b-mh'}">${p.type}</span></td>
-          <td style="font-weight:600">${p.name}</td>
+          <td style="font-weight:600"><button type="button" data-saoke="${encodeURIComponent(p.name)}" style="font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">${escapeHtml(p.name)}</button></td>
           <td>${p.tm}</td><td>${p.am}</td>
           <td style="font-size:12px;max-width:200px;word-break:break-word">${p.stk||'—'}</td>
           <td style="white-space:nowrap">${canEdit?`
