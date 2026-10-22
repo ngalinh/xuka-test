@@ -175,9 +175,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .tw{overflow-x:auto;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:var(--glass-brd);border-radius:24px;box-shadow:var(--glass-sh);padding:8px 8px 4px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{padding:10px 10px;text-align:left;font-weight:600;font-size:11px;color:#9aa0b2;background:transparent;border-bottom:none;white-space:normal;text-transform:uppercase;letter-spacing:.05em}
-.th-sort{display:inline-flex;align-items:center;gap:4px;max-width:100%;background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9aa0b2;cursor:pointer;text-align:left}
-.th-sort .th-az{flex:none;font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;color:#b7bdd0}
-.th-sort.on,.th-sort.on .th-az{color:#3d4fc4}
+.saoke-name{background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;color:inherit;cursor:pointer;text-align:left;text-decoration:none}
+.th-lab{display:inline-flex;align-items:center;gap:6px}
+.th-sort{flex:none;border:1px solid rgba(140,150,190,0.28);background:rgba(255,255,255,0.78);color:#8b90a3;border-radius:999px;padding:1px 7px;min-width:26px;font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.6;cursor:pointer;font-family:inherit}
+.th-sort:hover{border-color:#c5ccee;color:#5b6bd6}
+.th-sort.on{background:#eef0ff;border-color:#c9d0fb;color:#3d4fc4}
+.th-x{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid #e1e4f2;background:#fff;color:#8b90a3;cursor:pointer;font-size:12px;line-height:14px;padding:0;font-family:inherit}
+.th-x:hover{background:#fdecec;border-color:#f0b4b4;color:#c24545}
 td{padding:11px 10px;border-top:1px solid rgba(120,120,180,0.1);border-bottom:none;color:var(--txt);vertical-align:middle}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 td.nowrap{white-space:nowrap}
@@ -2912,7 +2916,7 @@ function renderSupDebt(){
     const canDoCopy=canEdit&&s.status==='Cancelled';
     return '<div class="list-row">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">'
-      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" data-saoke="'+encodeURIComponent(s.name||'')+'" style="font-size:14px;font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">'+escapeHtml(s.name||'—')+'</button>'+typePill(s.type)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" data-saoke="'+encodeURIComponent(s.name||'')+'" class="saoke-name">'+escapeHtml(s.name||'—')+'</button>'+typePill(s.type)+'</div>'
       +statusPill(s.status||'Chờ điều phối')+'</div>'
       +(s.nv?'<div style="font-size:11px;color:#9aa0b2;margin-bottom:5px">NV: '+s.nv+'</div>':'')
       +(pchar&&(pchar.tm||pchar.am)?'<div style="font-size:11px;color:#797f90;margin-bottom:5px">'+SVG_CLOCK+pchar.tm+(pchar.am?' · '+SVG_COIN+pchar.am:'')+'</div>':'')
@@ -3004,7 +3008,7 @@ function renderSupList(){
   const list=D.partners.length?D.partners.map((p,i)=>'<div style="display:flex;align-items:flex-start;gap:13px;background:linear-gradient(160deg,rgba(255,255,255,0.70),rgba(255,255,255,0.44));border:1px solid rgba(255,255,255,0.72);border-radius:16px;box-shadow:0 5px 14px rgba(120,120,180,0.08);padding:13px 15px;margin-bottom:10px">'
     +'<div style="width:42px;height:42px;border-radius:13px;background:linear-gradient(150deg,#8a9bf2,#b39bea);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex:none">'+initials(p.name)+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><button type="button" data-saoke="'+encodeURIComponent(p.name)+'" style="font-size:13.5px;font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">'+escapeHtml(p.name)+'</button>'+typePill(p.type)+'</div>'
+    +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><button type="button" data-saoke="'+encodeURIComponent(p.name)+'" class="saoke-name">'+escapeHtml(p.name)+'</button>'+typePill(p.type)+'</div>'
     +(p.stk?'<div class="mono" style="font-size:11.5px">'+p.stk+'</div>':'')
     +((p.tm||p.am)?'<div style="font-size:11px;color:#9aa0b2;margin-top:2px">'+(p.tm?SVG_CLOCK+p.tm:'')+(p.am?' · '+SVG_COIN+p.am:'')+'</div>':'')
     +'</div>'
@@ -6507,6 +6511,13 @@ function colSortToggle(table, key){
   const fns = {t1:rt1, t2:rt2, t3:rt4, t4a:rt5a, t4b:rt5b, tgc:rtGc};
   if(fns[table]) fns[table]();
 }
+function colSortClear(table){
+  delete COL_SORT[table];
+  const pg = COL_PG[table];
+  if(pg) D[pg] = 0;
+  const fns = {t1:rt1, t2:rt2, t3:rt4, t4a:rt5a, t4b:rt5b, tgc:rtGc};
+  if(fns[table]) fns[table]();
+}
 function applyColSort(table, rows, get){
   const s = COL_SORT[table];
   if(!s || !s.key || !get[s.key]) return rows;
@@ -6524,8 +6535,9 @@ function paintSortHead(id, table, cols){
   tr.innerHTML = cols.map(c=>{
     if(!c.key) return '<th>'+(c.label||'')+'</th>';
     const on = s && s.key === c.key;
-    const mark = on ? (s.dir === 'za' ? 'Z-A' : 'A-Z') : 'A-Z';
-    return '<th><button type="button" class="th-sort'+(on?' on':'')+'" onclick="colSortToggle(\''+table+'\',\''+c.key+'\')">'+c.label+'<span class="th-az">'+mark+'</span></button></th>';
+    const mark = on ? (s.dir === 'za' ? 'Z-A' : 'A-Z') : '↕';
+    const clear = on ? '<button type="button" class="th-x" title="Bỏ lọc" onclick="colSortClear(\''+table+'\')">×</button>' : '';
+    return '<th><span class="th-lab">'+c.label+'<button type="button" class="th-sort'+(on?' on':'')+'" title="'+(on ? 'Đổi A-Z / Z-A' : 'Sắp xếp A-Z')+'" onclick="colSortToggle(\''+table+'\',\''+c.key+'\')">'+mark+'</button>'+clear+'</span></th>';
   }).join('');
 }
 function rt1(){
@@ -6570,7 +6582,7 @@ function rt1(){
     return `<tr>
       <td>${start+idx+1}</td>
       <td><span class="badge ${b.p.type==='Sup'?'b-sup':'b-mh'}">${b.p.type}</span></td>
-      <td style="font-weight:600"><button type="button" data-saoke="${encodeURIComponent(b.p.name)}" style="font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">${escapeHtml(b.p.name)}</button>${((D.checkerFiles||{})[b.p.name]||{}).url ? `<div style="margin-top:4px"><a href="${escapeHtml((D.checkerFiles||{})[b.p.name].url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#5b6bd6">Mở file</a></div>` : ''}</td>
+      <td style="font-weight:600"><button type="button" data-saoke="${encodeURIComponent(b.p.name)}" class="saoke-name">${escapeHtml(b.p.name)}</button>${((D.checkerFiles||{})[b.p.name]||{}).url ? `<div style="margin-top:4px"><a href="${escapeHtml((D.checkerFiles||{})[b.p.name].url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#5b6bd6">Mở file</a></div>` : ''}</td>
       <td class="num">${iCell}</td>
       <td class="num">${iiCell}</td>
       <td class="num">${iiiCell}</td>
@@ -7715,7 +7727,7 @@ function rt5a(){
         const i = D.partners.indexOf(p);
         return `<tr>
           <td><span class="badge ${p.type==='Sup'?'b-sup':'b-mh'}">${p.type}</span></td>
-          <td style="font-weight:600"><button type="button" data-saoke="${encodeURIComponent(p.name)}" style="font-weight:600;background:none;border:none;padding:0;color:#3d4fc4;cursor:pointer;text-decoration:underline;font:inherit;text-align:left">${escapeHtml(p.name)}</button></td>
+          <td style="font-weight:600"><button type="button" data-saoke="${encodeURIComponent(p.name)}" class="saoke-name">${escapeHtml(p.name)}</button></td>
           <td>${p.tm}</td><td>${p.am}</td>
           <td style="font-size:12px;max-width:200px;word-break:break-word">${p.stk||'—'}</td>
           <td style="white-space:nowrap">${canEdit?`
