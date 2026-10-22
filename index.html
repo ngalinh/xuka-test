@@ -175,6 +175,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .tw{overflow-x:auto;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:var(--glass-brd);border-radius:24px;box-shadow:var(--glass-sh);padding:8px 8px 4px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{padding:10px 10px;text-align:left;font-weight:600;font-size:11px;color:#9aa0b2;background:transparent;border-bottom:none;white-space:normal;text-transform:uppercase;letter-spacing:.05em}
+.th-sort{display:inline-flex;align-items:center;gap:4px;max-width:100%;background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9aa0b2;cursor:pointer;text-align:left}
+.th-sort .th-az{flex:none;font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;color:#b7bdd0}
+.th-sort.on,.th-sort.on .th-az{color:#3d4fc4}
 td{padding:11px 10px;border-top:1px solid rgba(120,120,180,0.1);border-bottom:none;color:var(--txt);vertical-align:middle}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 td.nowrap{white-space:nowrap}
@@ -4343,7 +4346,7 @@ init();
   </div>
   <div style="font-size:12.5px;color:var(--txt2);margin:-6px 0 14px;line-height:1.5">Sup: (I) là tổng Mua GC đã Y/C TT, (III) = (I) − (II). Checker đã gắn file: (I) là tổng cột Công nợ, (III) là cột Còn lại trên sheet nhân tỷ lệ riêng của checker đó, mặc định 70%. (II) cả hai lấy bill Tracking đã Sup/Checker XN hoặc Done. (IV) là số tiền chỉ định của KH đang Chờ khách CK, hoặc Khách đã CK mà bill còn Chờ XN. (V) = (III) − (IV).</div>
   <div class="tw"><table>
-    <thead><tr>
+    <thead><tr id="th1">
     <th>STT</th><th>Loại</th><th>Tên đối tác</th><th>Tổng giao dịch (I)</th><th>Đã thanh toán (II)</th><th>Công nợ (III)</th><th>Đã điều phối (IV)</th><th>Chờ điều phối (V)</th>
   </tr></thead><tbody id="tb1"></tbody></table></div>
   <div id="pg1" class="pgbar"></div>
@@ -4377,7 +4380,7 @@ init();
     <button class="btn btn-p" id="btn-add-kh" onclick="openM('mkh')" style="margin-left:auto">+ Nhập công nợ KH</button>
   </div>
   <div class="tw"><table>
-    <thead><tr>
+    <thead><tr id="th2">
     <th>STT</th><th>Ngày</th><th>NV phụ trách</th><th>Tên KH</th><th>Số tiền/lệnh</th><th>TK Nhận</th><th>Số tiền chỉ định</th><th>Trạng thái</th><th>Bill CK</th><th>Điều phối</th>
   </tr></thead><tbody id="tb2"></tbody></table></div>
   <div id="pg2" class="pgbar"></div>
@@ -4401,7 +4404,7 @@ init();
     <button class="btn btn-p" id="btn-add-ck" onclick="openM('mck')" style="margin-left:auto">+ Nhập bill CK</button>
   </div>
   <div class="tw"><table>
-    <thead><tr>
+    <thead><tr id="th4">
     <th>Ngày</th><th>NV phụ trách</th><th>Nguồn CK</th><th>Người nhận</th><th>STK nhận</th><th>Số tiền</th><th>Bill CK</th><th>Tình trạng</th><th>Hành động</th>
   </tr></thead><tbody id="tb4"></tbody></table></div>
   <div id="pg4" class="pgbar"></div>
@@ -4419,7 +4422,7 @@ init();
     <button class="btn btn-p" id="btn-add-partner" onclick="openAddPartner()" style="margin-left:auto">+ Thêm Sup/Checker</button>
   </div>
   <input type="hidden" id="f5type" value="">
-  <div class="tw"><table><thead><tr>
+  <div class="tw"><table><thead><tr id="th5a">
     <th>Loại</th><th>ID Đối tác</th><th>Thời gian y/c bank</th><th>Số tiền min/Lệnh</th><th>STK</th><th></th>
   </tr></thead><tbody id="tb5a"></tbody></table></div>
   <div id="pg5a" class="pgbar"></div>
@@ -4432,7 +4435,7 @@ init();
     <button class="btn btn-p" id="btn-add-gc" onclick="openMuaGc()" style="margin-left:auto">+ Thêm dòng Mua GC</button>
   </div>
   <div style="font-size:12.5px;color:var(--txt2);background:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.8);border-radius:12px;padding:10px 14px;margin:-6px 0 14px;line-height:1.55">Sup chọn từ Danh sách ID đối tác. Người thu điền hàng ngày và để tình trạng trống. Bấm cột <b>Tình trạng</b> để gắn hoặc bỏ Y/C TT. Chỉ dòng <b>Y/C TT</b> được tạo khoản ở tab Công nợ.</div>
-  <div class="tw"><table><thead><tr>
+  <div class="tw"><table><thead><tr id="thgc">
     <th>Ngày</th><th>Website</th><th>Sup</th><th>USD</th><th>Rate</th><th>VNĐ</th><th>Người thu</th><th>Tình trạng</th><th></th>
   </tr></thead><tbody id="tbgc"></tbody></table></div>
 </div>
@@ -4450,7 +4453,7 @@ init();
     <input type="hidden" id="f5ch" value="">
     <button class="btn btn-p" id="btn-add-kh-char" onclick="openAddKhChar()" style="margin-left:auto">+ Thêm KH</button>
   </div>
-  <div class="tw"><table><thead><tr>
+  <div class="tw"><table><thead><tr id="th5b">
     <th>Kênh</th><th>Tên KH</th><th>SDT</th><th>Thời gian bank</th><th>Hành động</th>
   </tr></thead><tbody id="tb5b"></tbody></table></div>
   <div id="pg5b" class="pgbar"></div>
@@ -6493,11 +6496,61 @@ function refreshCheckerSheets(){
     refreshCheckerSheets.sig = '';
   });
 }
+const COL_SORT = {};
+const COL_PG = {t1:'pg1', t2:'pg2', t3:'pg4', t4a:'pg5a', t4b:'pg5b'};
+function colSortToggle(table, key){
+  const cur = COL_SORT[table] || (COL_SORT[table] = {key:'', dir:'az'});
+  if(cur.key === key) cur.dir = cur.dir === 'az' ? 'za' : 'az';
+  else { cur.key = key; cur.dir = 'az'; }
+  const pg = COL_PG[table];
+  if(pg) D[pg] = 0;
+  const fns = {t1:rt1, t2:rt2, t3:rt4, t4a:rt5a, t4b:rt5b, tgc:rtGc};
+  if(fns[table]) fns[table]();
+}
+function applyColSort(table, rows, get){
+  const s = COL_SORT[table];
+  if(!s || !s.key || !get[s.key]) return rows;
+  const spec = get[s.key];
+  const dir = s.dir === 'za' ? -1 : 1;
+  return [...rows].sort((a,b)=>{
+    const av = spec(a), bv = spec(b);
+    if(typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+    return String(av == null ? '' : av).localeCompare(String(bv == null ? '' : bv), 'vi', {numeric:true, sensitivity:'base'}) * dir;
+  });
+}
+function paintSortHead(id, table, cols){
+  const tr = el(id); if(!tr) return;
+  const s = COL_SORT[table];
+  tr.innerHTML = cols.map(c=>{
+    if(!c.key) return '<th>'+(c.label||'')+'</th>';
+    const on = s && s.key === c.key;
+    const mark = on ? (s.dir === 'za' ? 'Z-A' : 'A-Z') : 'A-Z';
+    return '<th><button type="button" class="th-sort'+(on?' on':'')+'" onclick="colSortToggle(\''+table+'\',\''+c.key+'\')">'+c.label+'<span class="th-az">'+mark+'</span></button></th>';
+  }).join('');
+}
 function rt1(){
   repairOrphanSupStatus();
   refreshCheckerSheets();
   if(refreshLedgers()) autosave();
-  const rows = partnerBalances();
+  paintSortHead('th1','t1',[
+    {label:'STT'},
+    {key:'type', label:'Loại'},
+    {key:'name', label:'Tên đối tác'},
+    {key:'I', label:'Tổng giao dịch (I)'},
+    {key:'II', label:'Đã thanh toán (II)'},
+    {key:'III', label:'Công nợ (III)'},
+    {key:'IV', label:'Đã điều phối (IV)'},
+    {key:'V', label:'Chờ điều phối (V)'}
+  ]);
+  const rows = applyColSort('t1', partnerBalances(), {
+    type: b=>b.p.type||'',
+    name: b=>b.p.name||'',
+    I: b=>Number(b.I)||0,
+    II: b=>Number(b.II)||0,
+    III: b=>Number(b.III)||0,
+    IV: b=>Number(b.IV)||0,
+    V: b=>Number(b.V)||0
+  });
   const {items, pages, cur} = paginate(rows, 'pg1', 20);
   const start = (cur||0) * 20;
   el('tb1').innerHTML = items.length ? items.map((b,idx)=>{
@@ -6569,6 +6622,18 @@ function rt2(){
   const ch = el('f2ch')?.value || '';
   const isAdmin2 = currentRole === 'admin';
   const canEditRow = ['admin','sale'].includes(currentRole);
+  paintSortHead('th2','t2',[
+    {label:'STT'},
+    {key:'date', label:'Ngày'},
+    {key:'nv', label:'NV phụ trách'},
+    {key:'name', label:'Tên KH'},
+    {key:'amount', label:'Số tiền/lệnh'},
+    {key:'stk', label:'TK Nhận'},
+    {key:'cd', label:'Số tiền chỉ định'},
+    {key:'status', label:'Trạng thái'},
+    {key:'bill', label:'Bill CK'},
+    {label:'Điều phối'}
+  ]);
   let list = D.kh.filter(k=>{
     if(st.length && !st.includes(k.status)) return false;
     const label = khDebtLabel(k.name).toLowerCase();
@@ -6580,7 +6645,17 @@ function rt2(){
     }
     return true;
   });
-  list = [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const khStkOf = k=>{ const sup = k.idCK ? D.sup.find(s=>s.idCK===k.idCK) : null; return k.stk || (sup && sup.stk) || ''; };
+  list = (COL_SORT.t2 && COL_SORT.t2.key) ? applyColSort('t2', list, {
+    date: k=>k.date||'',
+    nv: k=>k.nv||'',
+    name: k=>khDebtLabel(k.name),
+    amount: k=>Number(k.origAmount||k.amount)||0,
+    stk: khStkOf,
+    cd: k=>Number(k.cdAm!=null && k.cdAm!=='' ? k.cdAm : k.amount)||0,
+    status: k=>k.status||'',
+    bill: k=>{ const b = khBillOf(k); return b && b.link ? b.link : ''; }
+  }) : [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const {items, pages, cur} = paginate(list, 'pg2', 20);
   const start = (cur||0) * 20;
   const eye = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -6912,6 +6987,17 @@ function copyCkAt(i){
 }
 function rt4(){
   purgeOldBillImages();
+  paintSortHead('th4','t3',[
+    {key:'date', label:'Ngày'},
+    {key:'nv', label:'NV phụ trách'},
+    {key:'source', label:'Nguồn CK'},
+    {key:'receiver', label:'Người nhận'},
+    {key:'stk', label:'STK nhận'},
+    {key:'amount', label:'Số tiền'},
+    {key:'bill', label:'Bill CK'},
+    {key:'status', label:'Tình trạng'},
+    {label:'Hành động'}
+  ]);
   const st = msfValues('f4s'), q = el('f4q').value.toLowerCase();
   const nv = el('f4nv').value;
   const actions = ROLE_TRACK_ACTIONS[currentRole] || [];
@@ -6920,7 +7006,21 @@ function rt4(){
     (!q || String(c.source||c.kh||'').toLowerCase().includes(q) || String(c.receiver||'').toLowerCase().includes(q) || String(c.kh||'').toLowerCase().includes(q) || khDebtPhone(c.kh||'').includes(q)) &&
     (!nv || c.nv===nv)
   );
-  list = [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const ckStkOf = c=>{
+    const sup = c.idCK ? D.sup.find(s=>s.idCK===c.idCK) : null;
+    const partner = c.receiver ? D.partners.find(p=>p.name===c.receiver) : null;
+    return c.stk || (sup && sup.stk) || (partner && partner.stk) || '';
+  };
+  list = (COL_SORT.t3 && COL_SORT.t3.key) ? applyColSort('t3', list, {
+    date: c=>c.date||'',
+    nv: c=>c.nv||'',
+    source: c=>c.source || (c.payType==='Công ty CK' ? (c.kh||'Công ty') : khDebtLabel(c.kh||'')),
+    receiver: c=>{ const sup = c.idCK ? D.sup.find(s=>s.idCK===c.idCK) : null; return c.receiver || (sup ? sup.name : ''); },
+    stk: ckStkOf,
+    amount: c=>Number(c.amount)||0,
+    bill: c=>c.link||'',
+    status: c=>ckStatusLabel(c.status)
+  }) : [...list].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const {items:ckItems, pages:ckPages, cur:ckCur} = paginate(list, 'pg4', 20);
   const eye = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
   const copyIco = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
@@ -7531,10 +7631,31 @@ function toggleMuaGcStatus(i){
 function rtGc(){
   const tb = el('tbgc'); if(!tb) return;
   if(!Array.isArray(D.muaGc)) D.muaGc = [];
+  paintSortHead('thgc','tgc',[
+    {key:'date', label:'Ngày'},
+    {key:'website', label:'Website'},
+    {key:'sup', label:'Sup'},
+    {key:'usd', label:'USD'},
+    {key:'rate', label:'Rate'},
+    {key:'vnd', label:'VNĐ'},
+    {key:'who', label:'Người thu'},
+    {key:'status', label:'Tình trạng'},
+    {label:''}
+  ]);
   const q = (el('fgcq')?.value||'').toLowerCase();
-  const rows = D.muaGc
+  let rows = D.muaGc
     .map((r,i)=>({r,i}))
     .filter(({r})=> !q || String(r.website||'').toLowerCase().includes(q) || String(r.sup||'').toLowerCase().includes(q) || String(r.who||'').toLowerCase().includes(q));
+  rows = applyColSort('tgc', rows, {
+    date: x=>x.r.date||'',
+    website: x=>x.r.website||'',
+    sup: x=>x.r.sup||'',
+    usd: x=>Number(x.r.usd)||0,
+    rate: x=>Number(x.r.rate)||0,
+    vnd: x=>Number(x.r.vnd)||0,
+    who: x=>x.r.who||'',
+    status: x=>x.r.status||''
+  });
   tb.innerHTML = rows.length
     ? rows.map(({r,i})=>`<tr>
         <td>${fmtGcDate(r.date)}</td>
@@ -7570,10 +7691,24 @@ function rt5a(){
   const canEdit = ['admin','mh'].includes(currentRole);
   if(el('btn-add-partner')) el('btn-add-partner').style.display = canEdit ? '' : 'none';
 
-  const filteredP = D.partners.filter(p=>
+  paintSortHead('th5a','t4a',[
+    {key:'type', label:'Loại'},
+    {key:'name', label:'ID Đối tác'},
+    {key:'tm', label:'Thời gian y/c bank'},
+    {key:'am', label:'Số tiền min/Lệnh'},
+    {key:'stk', label:'STK'},
+    {label:''}
+  ]);
+  const filteredP = applyColSort('t4a', D.partners.filter(p=>
     (!type || p.type === type) &&
     (!q    || p.name.toLowerCase().includes(q))
-  );
+  ), {
+    type: p=>p.type||'',
+    name: p=>p.name||'',
+    tm: p=>p.tm||'',
+    am: p=>p.am||'',
+    stk: p=>p.stk||''
+  });
   const {items, total, pages, cur} = paginate(filteredP, 'pg5a', 20);
   el('tb5a').innerHTML = items.length
     ? items.map((p)=>{
@@ -7606,10 +7741,22 @@ function rt5b(){
   if(el('btn-add-kh-char')) el('btn-add-kh-char').style.display = canEdit ? '' : 'none';
 
   const all = [...D.khChars].reverse();
-  const filteredKH = all.filter(k=>{
+  paintSortHead('th5b','t4b',[
+    {key:'ch', label:'Kênh'},
+    {key:'name', label:'Tên KH'},
+    {key:'phone', label:'SDT'},
+    {key:'tm', label:'Thời gian bank'},
+    {label:'Hành động'}
+  ]);
+  const filteredKH = applyColSort('t4b', all.filter(k=>{
     const parts = khNamePhone(k);
     return (!ch || k.ch === ch) &&
       (!q || parts.name.toLowerCase().includes(q) || parts.phone.includes(q) || String(k.name||'').toLowerCase().includes(q));
+  }), {
+    ch: k=>k.ch||'',
+    name: k=>khNamePhone(k).name,
+    phone: k=>khNamePhone(k).phone||'',
+    tm: k=>k.tm||''
   });
   const {items, pages, cur} = paginate(filteredKH, 'pg5b', 20);
   el('tb5b').innerHTML = items.length
